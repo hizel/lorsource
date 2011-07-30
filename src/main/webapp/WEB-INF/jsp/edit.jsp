@@ -39,6 +39,18 @@
 <title>Редактирование сообщения</title>
 <script src="/js/jquery.validate.pack.js" type="text/javascript"></script>
 <script src="/js/jquery.validate.ru.js" type="text/javascript"></script>
+
+<script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+<script type="text/javascript" src="/js/markitup/jquery.markitup.js"></script>
+<script type="text/javascript" src="/js/markitup/sets/lor/set.js"></script>
+<link rel="stylesheet" type="text/css" href="/js/markitup/skins/lor/style.css" />
+<link rel="stylesheet" type="text/css" href="/js/markitup/sets/lor/style.css" />
+<script type="text/javascript" >
+	$(document).ready(function() {
+			$("#newmsg").markItUp(myLORSettings);
+			});
+</script>
+
 <script type="text/javascript">
   $(document).ready(function() {
     $("#messageForm").validate({
@@ -81,7 +93,7 @@
   <input type=text name=title class="required" size=40 value="<%= newMsg.getTitle()==null?"":HTMLFormatter.htmlSpecialChars(newMsg.getTitle()) %>" ></label><br>
 
   <br>
-  <textarea name="newmsg" cols="70" rows="20"><c:out escapeXml="true" value="${newMsg.message}"/></textarea>
+  <textarea id="newmsg" name="newmsg" cols="70" rows="20"><c:out escapeXml="true" value="${newMsg.message}"/></textarea>
   <br><br>
     <c:if test="${message.haveLink}">
       <label>Текст ссылки:
