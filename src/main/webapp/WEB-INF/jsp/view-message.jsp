@@ -46,6 +46,18 @@
 %>
 
 <title>${message.sectionTitle} - ${message.groupTitle} - ${message.title}</title>
+
+<script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+<script type="text/javascript" src="/js/markitup/jquery.markitup.js"></script>
+<script type="text/javascript" src="/js/markitup/sets/lor/set.js"></script>
+<link rel="stylesheet" type="text/css" href="/js/markitup/skins/lor/style.css" />
+<link rel="stylesheet" type="text/css" href="/js/markitup/sets/lor/style.css" />
+<script type="text/javascript" >
+	$(document).ready(function() {
+			$("#msg").markItUp(myLORSettings);
+			});
+</script>
+
 <link rel="parent" title="${message.sectionTitle} - ${message.groupTitle}" href="group.jsp?group=${message.groupId}">
 <c:if test="${prevMessage != null}">
   <link rel="Previous" id="PrevLink" href="${fn:escapeXml(prevMessage.link)}" title="<%= StringUtil.makeTitle(prevMessage.getTitle()) %>">

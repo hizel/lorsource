@@ -22,6 +22,18 @@
 <jsp:include page="/WEB-INF/jsp/head.jsp"/>
 
 <title>${message.sectionTitle} - ${message.groupTitle} - ${message.title}</title>
+
+<script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+<script type="text/javascript" src="/js/markitup/jquery.markitup.js"></script>
+<script type="text/javascript" src="/js/markitup/sets/lor/set.js"></script>
+<link rel="stylesheet" type="text/css" href="/js/markitup/skins/lor/style.css" />
+<link rel="stylesheet" type="text/css" href="/js/markitup/sets/lor/style.css" />
+<script type="text/javascript" >
+	$(document).ready(function() {
+			$("#msg").markItUp(myLORSettings);
+			});
+</script>
+
 <jsp:include page="/WEB-INF/jsp/header.jsp"/>
 <div class=messages>
   <lor:message messageMenu="<%= null %>" preparedMessage="${preparedMessage}" message="${message}" showMenu="false" user="${template.nick}"/>

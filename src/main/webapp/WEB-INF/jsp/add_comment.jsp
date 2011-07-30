@@ -21,6 +21,18 @@
 <jsp:include page="/WEB-INF/jsp/head.jsp"/>
 
 <title>Добавить сообщение</title>
+
+<script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+<script type="text/javascript" src="/js/markitup/jquery.markitup.js"></script>
+<script type="text/javascript" src="/js/markitup/sets/lor/set.js"></script>
+<link rel="stylesheet" type="text/css" href="/js/markitup/skins/lor/style.css" />
+<link rel="stylesheet" type="text/css" href="/js/markitup/sets/lor/style.css" />
+<script type="text/javascript" >
+	$(document).ready(function() {
+			$("#msg").markItUp(myLORSettings);
+			});
+</script>
+
 <jsp:include page="/WEB-INF/jsp/header.jsp"/>
 
 <table class=nav>
