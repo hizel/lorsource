@@ -37,6 +37,18 @@
 <title>Добавить сообщение</title>
 <script src="/js/jquery.validate.pack.js" type="text/javascript"></script>
 <script src="/js/jquery.validate.ru.js" type="text/javascript"></script>
+
+<script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+<script type="text/javascript" src="/js/markitup/jquery.markitup.js"></script>
+<script type="text/javascript" src="/js/markitup/sets/lor/set.js"></script>
+<link rel="stylesheet" type="text/css" href="/js/markitup/skins/lor/style.css" />
+<link rel="stylesheet" type="text/css" href="/js/markitup/sets/lor/style.css" />
+<script type="text/javascript" >
+	$(document).ready(function() {
+			$("#form_msg").markItUp(myLORSettings);
+			});
+</script>
+
 <script type="text/javascript">
   $(document).ready(function() {
     $("#messageForm").validate({

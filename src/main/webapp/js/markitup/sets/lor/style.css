@@ -1,0 +1,40 @@
+/* -------------------------------------------------------------------
+// markItUp! for LOR
+// © Oleksandr Natalenko, 2011
+// ------------------------------------------------------------------*/
+.markItUp .markItUpButton1 a {
+	background-image:url(images/01_b.png);
+}
+.markItUp .markItUpButton2 a {
+	background-image:url(images/02_i.png);
+}
+.markItUp .markItUpButton3 a {
+	background-image:url(images/03_u.png);
+}
+.markItUp .markItUpButton4 a {
+	background-image:url(images/04_s.png); 
+}
+.markItUp .markItUpButton5 a {
+	background-image:url(images/05_url.png);
+}
+.markItUp .markItUpButton6 a {
+	background-image:url(images/06_quote.png); 
+}
+.markItUp .markItUpButton7 a {
+	background-image:url(images/07_code.png);
+}
+.markItUp .markItUpButton8 a {
+	background-image:url(images/08_user.png);
+}
+.markItUp .markItUpButton9 a {
+	background-image:url(images/09_list.png);
+}
+.markItUp .markItUpButton10 a {
+	background-image:url(images/10_list1.png);
+}
+.markItUp .markItUpButton11 a {
+	background-image:url(images/11_ast.png);
+}
+.markItUp .markItUpButton12 a {
+	background-image:url(images/12_clean.png);
+}
