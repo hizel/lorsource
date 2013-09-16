@@ -12,10 +12,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <dependency.spring.version>3.2.3.RELEASE</dependency.spring.version>
+        <dependency.spring.version>3.2.4.RELEASE</dependency.spring.version>
         <spring.security.version>3.1.4.RELEASE</spring.security.version>
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
-        <jdbc.postgresql.version>9.2-1002.jdbc4</jdbc.postgresql.version>
+        <jdbc.postgresql.version>9.2-1002-jdbc4</jdbc.postgresql.version>
     </properties>
 
     <dependencies>
@@ -79,7 +79,7 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>postgresql</groupId>
+            <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${jdbc.postgresql.version}</version>
             <scope>test</scope>
@@ -481,7 +481,7 @@
 
                 <dependencies>
                     <dependency>
-                        <groupId>postgresql</groupId>
+                        <groupId>org.postgresql</groupId>
                         <artifactId>postgresql</artifactId>
                         <version>${jdbc.postgresql.version}</version>
                     </dependency>
@@ -761,7 +761,7 @@
                                             <destFileName>solr.war</destFileName>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>postgresql</groupId>
+                                            <groupId>org.postgresql</groupId>
                                             <artifactId>postgresql</artifactId>
                                             <version>${jdbc.postgresql.version}</version>
                                             <type>jar</type>
@@ -799,11 +799,6 @@
         <repository>
           <id>spring-jade4j-releases</id>
           <url>https://raw.github.com/neuland/spring-jade4j/master/releases</url>
-        </repository>
-
-	<repository>
-	  <id>typesafe</id>
-	  <url>http://repo.typesafe.com/typesafe/repo/</url>
         </repository>
     </repositories>
 
