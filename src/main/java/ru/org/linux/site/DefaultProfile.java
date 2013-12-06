@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import ru.org.linux.message.MessageType;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -61,6 +62,12 @@ public final class DefaultProfile {
 
   private static final ImmutableMap<String, Object> defaultProfile = ImmutableMap.copyOf(createDefaultProfile());
 
+  private static final ImmutableMap<String, MessageType> MARKUPS = ImmutableMap.of(
+      "LORCODE", MessageType.BBCODE_TEX,
+      "LORCODE USER LINE BREAK", MessageType.BBCODE_ULB,
+      "MARKDOWN", MessageType.MARKDOWN
+  );
+
   private DefaultProfile() {
   }
 
@@ -91,6 +98,7 @@ public final class DefaultProfile {
     defaults.put(HIDE_ADSENSE_PROPERTY, true);
     defaults.put(MAIN_GALLERY_PROPERTY, false);
     defaults.put(SHOW_SOCIAL_PROPERTY, true);
+    defaults.put(MARKUP_PROPERTY, "LORCODE");
 
     defaults.put("DebugMode", Boolean.FALSE);
 
@@ -110,6 +118,14 @@ public final class DefaultProfile {
 
   public static boolean isStyle(String style) {
     return THEMES.containsKey(style);
+  }
+
+  public static boolean isMarkup(String markup) {
+    return MARKUPS.containsKey(markup);
+  }
+
+  public static List<String> getMarkupList() {
+    return MARKUPS.keySet().asList();
   }
 
   @Deprecated

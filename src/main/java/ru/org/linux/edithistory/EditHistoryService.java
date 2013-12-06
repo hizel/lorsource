@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.comment.Comment;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.tag.TagService;
 import ru.org.linux.topic.Topic;
 import ru.org.linux.topic.TopicTagService;
@@ -50,7 +50,7 @@ public class EditHistoryService {
   private LorCodeService lorCodeService;
   
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private EditHistoryDao editHistoryDao;

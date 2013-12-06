@@ -162,7 +162,7 @@ public class Topic implements Serializable {
       url = null;
     }
 
-    // Setting Message fields
+    // Setting message fields
     if (form.getTitle()!=null) {
       title = StringUtil.escapeHtml(form.getTitle());
     } else {

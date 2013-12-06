@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.auth.AccessViolationException;
 import ru.org.linux.auth.IPBlockDao;
 import ru.org.linux.auth.IPBlockInfo;
@@ -33,7 +34,6 @@ import ru.org.linux.csrf.CSRFNoAuto;
 import ru.org.linux.search.SearchQueueSender;
 import ru.org.linux.site.Template;
 import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.topic.TopicPermissionService;
 import ru.org.linux.user.User;
 import ru.org.linux.util.ServletParameterException;
@@ -50,7 +50,7 @@ public class EditCommentController extends ApplicationObjectSupport {
   private CommentService commentService;
 
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private IPBlockDao ipBlockDao;

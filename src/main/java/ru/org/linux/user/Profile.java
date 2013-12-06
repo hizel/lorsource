@@ -40,6 +40,7 @@ public class Profile {
   public static final String SHOW_ANONYMOUS_PROPERTY = "showanonymous";
   public static final String BOXES_MAIN2_PROPERTY = "main2";
   public static final String SHOW_SOCIAL_PROPERTY = "showSocial";
+  public static final String MARKUP_PROPERTY = "markup";
 
   private String style;
   private String formatMode;
@@ -53,6 +54,7 @@ public class Profile {
   private String avatarMode;
   private boolean showAnonymous;
   private boolean showSocial;
+  private String markup;
 
   private List<String> boxes;
 
@@ -69,6 +71,7 @@ public class Profile {
     avatarMode = p.getString(AVATAR_PROPERTY);
     showAnonymous = p.getBoolean(SHOW_ANONYMOUS_PROPERTY);
     showSocial = p.getBoolean(SHOW_SOCIAL_PROPERTY);
+    markup = p.getString(MARKUP_PROPERTY);
 
     this.boxes = boxes;
   }
@@ -200,6 +203,21 @@ public class Profile {
     }
 
     return style;
+  }
+
+  private static String fixMarkup(String markup) {
+    if (!DefaultProfile.isMarkup(markup)) {
+      return (String) AuthUtil.getDefaults().get(MARKUP_PROPERTY);
+    }
+    return markup;
+  }
+
+  public String getMarkup() {
+    return fixMarkup(markup);
+  }
+
+  public void setMarkup(String markup) {
+    this.markup = markup;
   }
 
   @Nonnull

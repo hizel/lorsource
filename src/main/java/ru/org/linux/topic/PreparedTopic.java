@@ -35,7 +35,6 @@ public final class PreparedTopic {
   private final String ogDescription;
   private final PreparedPoll poll;
   private final User commiter;
-  private final boolean lorcode;
   private final ImmutableList<String> tags;
   private final Group group;
   private final Section section;
@@ -65,7 +64,6 @@ public final class PreparedTopic {
           EditHistoryDto lastHistoryDto,
           User lastEditor,
           int editorCount,
-          boolean lorcode,
           PreparedImage image,
           String postscoreInfo,
           Remark remark) {
@@ -77,7 +75,6 @@ public final class PreparedTopic {
     this.ogDescription = ogDescription;
     this.poll = poll;
     this.commiter = commiter;
-    this.lorcode = lorcode;
     this.postscoreInfo = postscoreInfo;
     if (tags!=null) {
       this.tags=ImmutableList.copyOf(tags);
@@ -151,10 +148,6 @@ public final class PreparedTopic {
 
   public Section getSection() {
     return section;
-  }
-
-  public boolean isLorcode() {
-    return lorcode;
   }
 
   public PreparedImage getImage() {

@@ -18,13 +18,13 @@ package ru.org.linux.comment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.auth.CaptchaService;
 import ru.org.linux.auth.FloodProtector;
 import ru.org.linux.auth.IPBlockDao;
 import ru.org.linux.auth.IPBlockInfo;
 import ru.org.linux.edithistory.EditHistoryService;
 import ru.org.linux.search.SearchQueueSender;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.test.Users;
 import ru.org.linux.topic.TopicDao;
 import ru.org.linux.user.IgnoreListDao;
@@ -88,7 +88,7 @@ public class CommentServiceTest {
   private UserEventService userEventService;
 
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private SearchQueueSender searchQueueSender;

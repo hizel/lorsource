@@ -23,9 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import ru.org.linux.message.Message;
 import ru.org.linux.gallery.ImageDao;
 import ru.org.linux.gallery.Screenshot;
 import ru.org.linux.group.Group;
+import ru.org.linux.message.MessageService;
 import ru.org.linux.poll.PollDao;
 import ru.org.linux.poll.PollNotFoundException;
 import ru.org.linux.poll.PollVariant;
@@ -86,11 +88,14 @@ public class TopicService {
   @Autowired
   private LorCodeService lorCodeService;
 
+  @Autowired
+  private MessageService messageService;
+
   @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
   public int addMessage(
           HttpServletRequest request,
           AddTopicRequest form,
-          String message,
+          Message message,
           Group group,
           User user,
           Screenshot scrn,
@@ -131,9 +136,9 @@ public class TopicService {
 
     if (!previewMsg.isDraft()) {
       if (section.isPremoderated()) {
-        sendEvents(message, msgid, ImmutableList.<String>of(), user.getId());
+        sendEvents(topicDao.getById(msgid), ImmutableList.<String>of(), user.getId());
       } else {
-        sendEvents(message, msgid, tags, user.getId());
+        sendEvents(topicDao.getById(msgid), tags, user.getId());
       }
     }
 
@@ -146,14 +151,13 @@ public class TopicService {
   /**
    * Отправляет уведомления типа REF (ссылка на пользователя) и TAG (уведомление по тегу)
    *
-   * @param message текст сообщения
-   * @param msgid идентификатор сообщения
+   * @param topic топик
    * @param author автор сообщения (ему не будет отправлено уведомление)
    */
-  private void sendEvents(String message, int msgid, List<String> tags, int author) {
-    Set<Integer> notifiedUsers = userEventService.getNotifiedUsers(msgid);
+  private void sendEvents(Topic topic, List<String> tags, int author) {
+    Set<Integer> notifiedUsers = userEventService.getNotifiedUsers(topic.getId());
 
-    Set<User> userRefs = lorCodeService.getReplierFromMessage(message);
+    Set<User> userRefs = messageService.getTopicReplier(topic);
 
     // оповещение пользователей по тегам
     List<Integer> userIdListByTags = userTagService.getUserIdListByTags(author, tags);
@@ -171,8 +175,8 @@ public class TopicService {
             not(or(in(userRefIds), in(notifiedUsers)))
     );
 
-    userEventService.addUserRefEvent(userRefIds, msgid);
-    userEventService.addUserTagEvent(tagUsers, msgid);
+    userEventService.addUserRefEvent(userRefIds, topic.getId());
+    userEventService.addUserTagEvent(tagUsers, topic.getId());
   }
 
   /**
@@ -269,9 +273,9 @@ public class TopicService {
       Section section = sectionService.getSection(oldMsg.getSectionId());
 
       if (section.isPremoderated() && !oldMsg.isCommited() && !commit) {
-        sendEvents(newText, oldMsg.getId(), ImmutableList.<String>of(), oldMsg.getUid());
+        sendEvents(newMsg, ImmutableList.<String>of(), oldMsg.getUid());
       } else {
-        sendEvents(newText, oldMsg.getId(), newTags, oldMsg.getUid());
+        sendEvents(newMsg, newTags, oldMsg.getUid());
       }
     }
 

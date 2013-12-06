@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.WebDataBinder;
 import org.xbill.DNS.TextParseException;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.auth.CaptchaService;
 import ru.org.linux.auth.FloodProtector;
 import ru.org.linux.auth.IPBlockDao;
@@ -42,7 +43,6 @@ import ru.org.linux.site.Template;
 import ru.org.linux.spring.commons.CacheProvider;
 import ru.org.linux.spring.dao.DeleteInfoDao;
 import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.topic.Topic;
 import ru.org.linux.topic.TopicDao;
 import ru.org.linux.topic.TopicPermissionService;
@@ -100,7 +100,7 @@ public class CommentService {
   private UserEventService userEventService;
 
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private IgnoreListDao ignoreListDao;

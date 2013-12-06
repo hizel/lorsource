@@ -54,6 +54,7 @@
 package ru.org.linux.util.bbcode.nodes;
 
 import org.apache.commons.httpclient.URI;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.org.linux.user.User;
 import ru.org.linux.user.UserDao;
 import ru.org.linux.util.bbcode.ParserParameters;
@@ -70,7 +71,7 @@ public class RootNode extends Node {
   private int cutCount;
   //
   private CutType cutType;
-  private URI cutURI;
+  private UriComponentsBuilder cutUriBuilder;
   private UserDao userDao;
   private ToHtmlFormatter toHtmlFormatter;
   private final Set<User> replier;
@@ -86,12 +87,12 @@ public class RootNode extends Node {
     secure = false;
   }
 
-  public URI getCutURI() {
-    return cutURI;
+  public UriComponentsBuilder getCutUriBuilder() {
+    return cutUriBuilder;
   }
 
-  public void setCutURI(URI cutURI) {
-    this.cutURI = cutURI;
+  public void setCutUriBuilder(UriComponentsBuilder cutUriBuilder) {
+    this.cutUriBuilder = cutUriBuilder;
   }
 
   public ToHtmlFormatter getToHtmlFormatter() {
@@ -151,9 +152,9 @@ public class RootNode extends Node {
     cutType = CutType.INTOPIC_MAXIMIZED;
   }
 
-  public void setMinimizedTopicCutOptions(URI cutURI) {
+  public void setMinimizedTopicCutOptions(UriComponentsBuilder cutUriBuilder) {
     cutType = CutType.INTOPIC_MINIMIZED;
-    this.cutURI = cutURI;
+    this.cutUriBuilder = cutUriBuilder;
   }
 
   public boolean isComment() {

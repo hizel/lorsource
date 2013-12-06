@@ -24,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.org.linux.message.Message;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.edithistory.EditHistoryDto;
 import ru.org.linux.edithistory.EditHistoryObjectTypeEnum;
 import ru.org.linux.edithistory.EditHistoryService;
@@ -32,6 +34,7 @@ import ru.org.linux.gallery.ImageDao;
 import ru.org.linux.group.Group;
 import ru.org.linux.group.GroupDao;
 import ru.org.linux.group.GroupPermissionService;
+import ru.org.linux.message.MessageService;
 import ru.org.linux.poll.Poll;
 import ru.org.linux.poll.PollNotFoundException;
 import ru.org.linux.poll.PollPrepareService;
@@ -42,11 +45,9 @@ import ru.org.linux.site.DeleteInfo;
 import ru.org.linux.spring.SiteConfig;
 import ru.org.linux.spring.dao.DeleteInfoDao;
 import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.user.*;
 import ru.org.linux.util.BadImageException;
 import ru.org.linux.util.LorURL;
-import ru.org.linux.util.StringUtil;
 import ru.org.linux.util.bbcode.LorCodeService;
 import ru.org.linux.util.image.ImageInfo;
 
@@ -96,7 +97,7 @@ public class TopicPrepareService {
   private GroupPermissionService groupPermissionService;
   
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private EditHistoryService editHistoryService;
@@ -106,6 +107,9 @@ public class TopicPrepareService {
 
   @Autowired
   private UserService userService;
+
+  @Autowired
+  private MessageService messageService;
   
   public PreparedTopic prepareTopic(Topic message, boolean secure, User user) {
     return prepareMessage(message, messageDao.getTags(message), false, null, secure, user, null, null);
@@ -116,7 +120,7 @@ public class TopicPrepareService {
           List<String> tags,
           Poll newPoll,
           boolean secure,
-          String text,
+          Message msg,
           Image image
   ) {
     return prepareMessage(
@@ -126,7 +130,7 @@ public class TopicPrepareService {
             newPoll!=null?pollPrepareService.preparePollPreview(newPoll):null,
             secure,
             null,
-            new MessageText(text, true),
+            msg,
             image
     );
   }
@@ -148,7 +152,7 @@ public class TopicPrepareService {
           PreparedPoll poll,
           boolean secure, 
           User user,
-          MessageText text,
+          Message msg,
           @Nullable Image image) {
     try {
       Group group = groupDao.getGroup(message.getGroupId());
@@ -205,31 +209,12 @@ public class TopicPrepareService {
         editCount = 0;
       }
 
-      if (text == null) {
-        text = msgbaseDao.getMessageText(message.getId());
-      }
-
-      String processedMessage;
-      String ogDescription;
-
-      if (text.isLorcode()) {
-        if (minimizeCut) {
-          String url = siteConfig.getMainUrl() + message.getLink();
-          processedMessage = lorCodeService.parseTopicWithMinimizedCut(
-                  text.getText(),
-                  url,
-                  secure,
-                  ! topicPermissionService.followInTopic(message, author)
-          );
-        } else {
-          processedMessage = lorCodeService.parseTopic(text.getText(), secure, ! topicPermissionService.followInTopic(message, author));
-        }
-
-        ogDescription = lorCodeService.extractPlainText(text.getText(), 250, true);
-      } else {
-        processedMessage = "<p>" + text.getText();
-        ogDescription = "";
-      }
+      String processedMessage = (msg == null) ?
+          messageService.getTopicHtmlMessage(message, secure, minimizeCut) :
+          messageService.getCommentHtmlPreviewMessage(msg, secure);
+      String ogDescription = (msg == null) ?
+          messageService.getTopicOgDescription(message, secure) :
+          "";
 
       PreparedImage preparedImage = null;
 
@@ -264,8 +249,7 @@ public class TopicPrepareService {
               editHistoryDto,
               lastEditor, 
               editCount,
-              text.isLorcode(),
-              preparedImage, 
+              preparedImage,
               TopicPermissionService.getPostScoreInfo(postscore),
               remark);
     } catch (PollNotFoundException e) {
@@ -318,7 +302,6 @@ public class TopicPrepareService {
   ) {
     List<PersonalizedPreparedTopic> pm = new ArrayList<>(messages.size());
 
-    Map<Integer,MessageText> textMap = loadTexts(messages);
     ImmutableListMultimap<Integer,String> tags = messageDao.getTags(messages);
 
     for (Topic message : messages) {
@@ -330,7 +313,7 @@ public class TopicPrepareService {
               null,
               secure,
               user,
-              textMap.get(message.getId()),
+              null,
               null
       );
 
@@ -348,19 +331,6 @@ public class TopicPrepareService {
     return pm;
   }
 
-  private Map<Integer, MessageText> loadTexts(List<Topic> messages) {
-    return msgbaseDao.getMessageText(
-            Lists.newArrayList(
-                    Iterables.transform(messages, new Function<Topic, Integer>() {
-                      @Override
-                      public Integer apply(Topic comment) {
-                        return comment.getId();
-                      }
-                    })
-            )
-    );
-  }
-
   /**
    * Подготовка ленты топиков, используется в TopicListController например
    * сообщения рендерятся со свернутым cut
@@ -371,7 +341,6 @@ public class TopicPrepareService {
   public List<PreparedTopic> prepareMessages(List<Topic> messages, boolean secure) {
     List<PreparedTopic> pm = new ArrayList<>(messages.size());
 
-    Map<Integer,MessageText> textMap = loadTexts(messages);
     ImmutableListMultimap<Integer,String> tags = messageDao.getTags(messages);
 
     for (Topic message : messages) {
@@ -382,7 +351,7 @@ public class TopicPrepareService {
               null,
               secure,
               null,
-              textMap.get(message.getId()),
+              null,
               null
       );
 

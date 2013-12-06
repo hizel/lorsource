@@ -93,8 +93,15 @@ $script.ready('plugins', function() {
 <tr>
   <td valign=top>Форматирование по умолчанию</td>
   <td>
-      <label><input type=radio name=format_mode id="format-quot"  value="quot" <c:if test="${template.formatMode == 'quot' }">checked</c:if> >TeX paragraphs (default)</label>
-      <label><input type=radio name=format_mode id="format-ntobr" value="ntobr" <c:if test="${template.formatMode == 'ntobr' }">checked</c:if> >User line break</label>
+    <c:set value="${template.prof.markup}" var="markup"/>
+    <c:forEach var="s" items="${markupList}">
+        <c:if test="${s == markup}">
+            <label><input type=radio name=avatar value="${s}" checked>${s}</label>
+        </c:if>
+        <c:if test="${s != markup}">
+            <label><input type=radio name=avatar value="${s}">${s}</label>
+        </c:if>
+    </c:forEach>
   </td>
 </tr>
 

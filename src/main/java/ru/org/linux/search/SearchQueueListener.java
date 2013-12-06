@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.comment.Comment;
 import ru.org.linux.comment.CommentList;
 import ru.org.linux.comment.CommentService;
@@ -39,7 +40,6 @@ import ru.org.linux.section.Section;
 import ru.org.linux.section.SectionService;
 import ru.org.linux.site.MessageNotFoundException;
 import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.topic.Topic;
 import ru.org.linux.topic.TopicDao;
 import ru.org.linux.user.User;
@@ -63,7 +63,7 @@ public class SearchQueueListener {
   private CommentService commentService;
   
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private Client client;

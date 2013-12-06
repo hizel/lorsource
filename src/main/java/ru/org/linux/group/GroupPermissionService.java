@@ -213,10 +213,6 @@ public class GroupPermissionService {
       return true;
     }
 
-    if (!topic.isLorcode()) {
-      return false;
-    }
-
     if (by.isModerator()) {
       return true;
     }

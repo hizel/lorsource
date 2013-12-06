@@ -29,6 +29,8 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
+import ru.org.linux.message.Message;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.auth.AccessViolationException;
 import ru.org.linux.auth.CaptchaService;
 import ru.org.linux.auth.IPBlockDao;
@@ -48,7 +50,6 @@ import ru.org.linux.section.Section;
 import ru.org.linux.site.BadInputException;
 import ru.org.linux.site.Template;
 import ru.org.linux.spring.FeedPinger;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.tag.TagService;
 import ru.org.linux.user.Profile;
 import ru.org.linux.user.User;
@@ -93,7 +94,7 @@ public class EditTopicController {
   private GroupPermissionService permissionService;
   
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
   
   @Autowired
   private EditHistoryService editHistoryService;
@@ -492,7 +493,7 @@ public class EditTopicController {
                     newTags,
                     newPoll,
                     request.isSecure(),
-                    newText,
+                    new Message(newText, tmpl.getProf().getMarkup()),
                     null
             )
     );

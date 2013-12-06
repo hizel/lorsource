@@ -32,6 +32,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import ru.org.linux.message.Message;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.edithistory.EditHistoryDto;
 import ru.org.linux.edithistory.EditHistoryObjectTypeEnum;
 import ru.org.linux.edithistory.EditHistoryService;
@@ -42,7 +44,6 @@ import ru.org.linux.section.SectionService;
 import ru.org.linux.site.DeleteInfo;
 import ru.org.linux.site.MessageNotFoundException;
 import ru.org.linux.spring.dao.DeleteInfoDao;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.tag.TagService;
 import ru.org.linux.user.User;
 import ru.org.linux.user.UserDao;
@@ -78,7 +79,7 @@ public class TopicDao {
   private SectionService sectionService;
 
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private DeleteInfoDao deleteInfoDao;
@@ -277,7 +278,7 @@ public class TopicDao {
   public int saveNewMessage(
           final Topic msg,
           final User user,
-          String text,
+          Message message,
           final String userAgent,
           final Group group
   ) {
@@ -312,7 +313,7 @@ public class TopicDao {
     // insert message text
     jdbcTemplate.update(
             "INSERT INTO msgbase (id, message) values (?,?)",
-            msgid, text
+            msgid, message
     );
 
     return msgid;

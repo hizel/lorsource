@@ -22,12 +22,12 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.org.linux.message.MessageDao;
 import ru.org.linux.site.ApiDeleteInfo;
 import ru.org.linux.site.DeleteInfo;
 import ru.org.linux.site.Template;
 import ru.org.linux.spring.dao.DeleteInfoDao;
 import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.spring.dao.UserAgentDao;
 import ru.org.linux.topic.Topic;
 import ru.org.linux.topic.TopicPermissionService;
@@ -48,7 +48,7 @@ public class CommentPrepareService {
   private LorCodeService lorCodeService;
 
   @Autowired
-  private MsgbaseDao msgbaseDao;
+  private MessageDao msgbaseDao;
 
   @Autowired
   private TopicPermissionService topicPermissionService;

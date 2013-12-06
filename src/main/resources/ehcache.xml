@@ -253,7 +253,7 @@ used with JMX monitors.
             />
 
     The JMS PeerProviderFactory uses JNDI to maintain message queue independence. Refer to the manual for full configuration
-    examples using ActiveMQ and Open Message Queue.
+    examples using ActiveMQ and Open message Queue.
 
     Valid properties are:
     * initialContextFactoryName (mandatory) - the name of the factory used to create the message queue initial context.
@@ -264,8 +264,8 @@ used with JMX monitors.
     * securityPrincipalName - the JNDI java.naming.security.principal
     * securityCredentials - the JNDI java.naming.security.credentials
     * urlPkgPrefixes - the JNDI java.naming.factory.url.pkgs
-    * userName - the user name to use when creating the TopicConnection to the Message Queue
-    * password - the password to use when creating the TopicConnection to the Message Queue
+    * userName - the user name to use when creating the TopicConnection to the message Queue
+    * password - the password to use when creating the TopicConnection to the message Queue
     * acknowledgementMode - the JMS Acknowledgement mode for both publisher and subscriber. The available choices are
                             AUTO_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE and SESSION_TRANSACTED. The default is AUTO_ACKNOWLEDGE.
     <cacheManagerPeerProviderFactory class="net.sf.ehcache.distribution.RMICacheManagerPeerProviderFactory" properties="peerDiscovery=automatic,                         multicastGroupAddress=230.0.0.1,                         multicastGroupPort=4446, timeToLive=1" propertySeparator=","/>

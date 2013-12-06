@@ -42,6 +42,7 @@ import ru.org.linux.gallery.Screenshot;
 import ru.org.linux.group.Group;
 import ru.org.linux.group.GroupDao;
 import ru.org.linux.group.GroupPermissionService;
+import ru.org.linux.message.Message;
 import ru.org.linux.poll.Poll;
 import ru.org.linux.poll.PollVariant;
 import ru.org.linux.search.SearchQueueSender;
@@ -309,7 +310,7 @@ public class AddTopicController {
               tagService.parseSanitizeTags(form.getTags()),
               poll,
               request.isSecure(),
-              message,
+              new Message(message, tmpl.getProf().getMarkup()),
               imageObject
       );
 
@@ -345,7 +346,7 @@ public class AddTopicController {
       int msgid = topicService.addMessage(
               request,
               form,
-              message,
+              new Message(message, tmpl.getProf().getMarkup()),
               group,
               user,
               scrn,

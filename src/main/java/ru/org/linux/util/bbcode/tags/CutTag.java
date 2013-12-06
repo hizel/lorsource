@@ -53,24 +53,17 @@
 
 package ru.org.linux.util.bbcode.tags;
 
-import org.apache.commons.httpclient.URI;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.org.linux.util.bbcode.NodeUtils;
 import ru.org.linux.util.bbcode.Parser;
 import ru.org.linux.util.bbcode.ParserParameters;
 import ru.org.linux.util.bbcode.nodes.Node;
 import ru.org.linux.util.bbcode.nodes.RootNode;
 import ru.org.linux.util.bbcode.nodes.TagNode;
-import ru.org.linux.util.bbcode.nodes.TextNode;
 import ru.org.linux.util.formatter.ToHtmlFormatter;
 
 import java.util.Set;
 
-/**
- * Created by IntelliJ IDEA.
- * User: hizel
- * Date: 7/5/11
- * Time: 11:55 AM
- */
 public class CutTag extends HtmlEquivTag {
 
   public CutTag(String name, Set<String> allowedChildren, String implicitTag, ParserParameters parserParameters) {
@@ -79,7 +72,7 @@ public class CutTag extends HtmlEquivTag {
 
   @Override
   public String renderNodeXhtml(Node node) {
-    if(NodeUtils.isEmptyNode(node)) {
+    if (NodeUtils.isEmptyNode(node)) {
       return "";
     }
     if (!node.isParameter()) {
@@ -87,36 +80,28 @@ public class CutTag extends HtmlEquivTag {
     } else {
       node.setParameter(node.getParameter().trim());
     }
-    TagNode tagNode = (TagNode)node;
+    TagNode tagNode = (TagNode) node;
     RootNode rootNode = tagNode.getRootNode();
+    String cutId = "cut" + Integer.toString(rootNode.getCutCount());
     if (rootNode.isComment()) { // коментарий, просто содержимое
       return node.renderChildrenXHtml();
-    } else if(rootNode.isTopicMaximized()) { // топик не свернутым cut, содежимое в div
-      StringBuilder ret = new StringBuilder();
-      ret.append("<div id=\"cut")
-              .append(Integer.toString(rootNode.getCutCount()))
-              .append("\">")
-              .append(node.renderChildrenXHtml())
-              .append("</div>");
-      return ret.toString();
-    } else if(rootNode.isTopicMinimized()) { // топик со свернутым cut, вместо содержимого ссылка
-      URI uri = rootNode.getCutURI();
-      try {
-        uri.setFragment("cut"+Integer.toString(rootNode.getCutCount()));
-        if (!node.getParameter().isEmpty()) {
-          ToHtmlFormatter formatter = rootNode.getToHtmlFormatter();
-          String parameter;
-          if(formatter != null) {
-            parameter = rootNode.getToHtmlFormatter().simpleFormat(node.getParameter().replaceAll("\"", ""));
-          } else {
-             parameter = Parser.escape(node.getParameter().replaceAll("\"", ""));
-          }
-          return String.format("<p>( <a href=\"%s\">%s</a> )</p>", uri.getEscapedURIReference(), parameter);
+    } else if (rootNode.isTopicMaximized()) { // топик не свернутым cut, содежимое в div
+      return "<div id=\"" + cutId + "\">" + node.renderChildrenXHtml() + "</div>";
+    } else if (rootNode.isTopicMinimized()) { // топик со свернутым cut, вместо содержимого ссылка
+      UriComponentsBuilder builder = rootNode.getCutUriBuilder();
+      builder.fragment(cutId);
+      String cutUrl = builder.build().encode().toString();
+      if (!node.getParameter().isEmpty()) {
+        ToHtmlFormatter formatter = rootNode.getToHtmlFormatter();
+        String parameter;
+        if (formatter != null) {
+          parameter = rootNode.getToHtmlFormatter().simpleFormat(node.getParameter().replaceAll("\"", ""));
         } else {
-          return String.format("<p>( <a href=\"%s\">читать дальше...</a> )</p>", uri.getEscapedURIReference());
+          parameter = Parser.escape(node.getParameter().replaceAll("\"", ""));
         }
-      } catch (Exception e) {
-        return node.renderChildrenXHtml();
+        return String.format("<p>( <a href=\"%s\">%s</a> )</p>", cutUrl, parameter);
+      } else {
+        return String.format("<p>( <a href=\"%s\">читать дальше...</a> )</p>", cutUrl);
       }
     } else {
       throw new RuntimeException("BUG");
