@@ -22,7 +22,7 @@ import com.google.common.collect.Iterables;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.org.linux.comment.Comment;
-import ru.org.linux.spring.dao.MsgbaseDao;
+import ru.org.linux.msg.MsgbaseDao;
 import ru.org.linux.tag.TagName;
 import ru.org.linux.tag.TagRef;
 import ru.org.linux.topic.Topic;

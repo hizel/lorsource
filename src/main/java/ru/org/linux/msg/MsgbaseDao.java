@@ -13,7 +13,7 @@
  *    limitations under the License.
  */
 
-package ru.org.linux.spring.dao;
+package ru.org.linux.msg;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -28,6 +28,7 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @Repository
@@ -50,11 +51,49 @@ public class MsgbaseDao {
     jdbcTemplate = new JdbcTemplate(dataSource);
     namedJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
   }
-  
+
   public String getMessageTextFromWiki(int topicId) {
     return jdbcTemplate.queryForObject(QUERY_MESSAGE_TEXT_FROM_WIKI, String.class, topicId);
   }
 
+  public Msg getMsg(int msgid) {
+    List<Msg> msgs = jdbcTemplate.query(QUERY_MESSAGE_TEXT, new RowMapper<Msg>() {
+      @Override
+      public Msg mapRow(ResultSet resultSet, int i) throws SQLException {
+        return new Msg(resultSet.getString("message"), MsgMarkup.valueOf(resultSet.getString("markup")));
+      }
+    });
+    if (msgs.isEmpty()) {
+      return null;
+    } else {
+      return msgs.get(0);
+    }
+  }
+
+  public Map<Integer, Msg> getMsgs(Collection<Integer> msgids) {
+    if (msgids.isEmpty()) {
+      return ImmutableMap.of();
+    }
+
+    final Map<Integer, Msg> out = Maps.newHashMapWithExpectedSize(msgids.size());
+
+    jdbcTemplate.query("SELECT message, markup, id FROM msgbase WHERE id IN (?)", new RowCallbackHandler() {
+      @Override
+      public void processRow(ResultSet resultSet) throws SQLException {
+        out.put(
+            resultSet.getInt("id"),
+            new Msg(
+                resultSet.getString("message"),
+                MsgMarkup.valueOf(resultSet.getString("markup"))
+            ));
+      }
+    });
+
+    return out;
+  }
+
+
+  @Deprecated
   public MessageText getMessageText(int msgid) {
     return jdbcTemplate.queryForObject(QUERY_MESSAGE_TEXT, new RowMapper<MessageText>() {
       @Override
@@ -66,8 +105,9 @@ public class MsgbaseDao {
         return new MessageText(text, lorcode);
       }
     }, msgid);
-  }                  
+  }
 
+  @Deprecated
   public Map<Integer, MessageText> getMessageText(Collection<Integer> msgids) {
     if (msgids.isEmpty()) {
       return ImmutableMap.of();
@@ -76,34 +116,31 @@ public class MsgbaseDao {
     final Map<Integer, MessageText> out = Maps.newHashMapWithExpectedSize(msgids.size());
 
     namedJdbcTemplate.query(
-            "SELECT message, markup, id FROM msgbase WHERE id IN (:list)",
-            ImmutableMap.of("list", msgids),
-            new RowCallbackHandler() {
-              @Override
-              public void processRow(ResultSet resultSet) throws SQLException {
-                String text = resultSet.getString("message");
-                String markup = resultSet.getString("markup");
-                boolean lorcode = !"PLAIN".equals(markup);
+        "SELECT message, markup, id FROM msgbase WHERE id IN (:list)",
+        ImmutableMap.of("list", msgids),
+        new RowCallbackHandler() {
+          @Override
+          public void processRow(ResultSet resultSet) throws SQLException {
+            String text = resultSet.getString("message");
+            String markup = resultSet.getString("markup");
+            boolean lorcode = !"PLAIN".equals(markup);
 
-                out.put(resultSet.getInt("id"), new MessageText(text, lorcode));
-              }
-            });
+            out.put(resultSet.getInt("id"), new MessageText(text, lorcode));
+          }
+        });
 
     return out;
   }
 
   public void updateMessage(int msgid, String text) {
-    namedJdbcTemplate.update(
-      "UPDATE msgbase SET message=:message WHERE id=:msgid",
-      ImmutableMap.of("message", text, "msgid", msgid)
-    );
+    jdbcTemplate.update("UPDATE msgbase SET message=? WHERE id=?", text, msgid);
   }
 
   public void appendMessage(int msgid, String text) {
     jdbcTemplate.update(
-            "UPDATE msgbase SET message=message||? WHERE id=?",
-            text,
-            msgid
+        "UPDATE msgbase SET message=message||? WHERE id=?",
+        text,
+        msgid
     );
   }
 }

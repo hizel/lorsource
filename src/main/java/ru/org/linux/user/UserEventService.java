@@ -26,8 +26,8 @@ import ru.org.linux.group.Group;
 import ru.org.linux.group.GroupDao;
 import ru.org.linux.site.DeleteInfo;
 import ru.org.linux.spring.dao.DeleteInfoDao;
-import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
+import ru.org.linux.msg.MessageText;
+import ru.org.linux.msg.MsgbaseDao;
 import ru.org.linux.util.bbcode.LorCodeService;
 
 import java.util.ArrayList;

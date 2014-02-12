@@ -24,7 +24,7 @@ import ru.org.linux.auth.IPBlockDao;
 import ru.org.linux.auth.IPBlockInfo;
 import ru.org.linux.edithistory.EditHistoryService;
 import ru.org.linux.search.SearchQueueSender;
-import ru.org.linux.spring.dao.MsgbaseDao;
+import ru.org.linux.msg.MsgbaseDao;
 import ru.org.linux.test.Users;
 import ru.org.linux.topic.TopicDao;
 import ru.org.linux.user.IgnoreListDao;

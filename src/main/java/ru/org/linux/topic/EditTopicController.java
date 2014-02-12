@@ -48,7 +48,7 @@ import ru.org.linux.section.Section;
 import ru.org.linux.site.BadInputException;
 import ru.org.linux.site.Template;
 import ru.org.linux.spring.FeedPinger;
-import ru.org.linux.spring.dao.MsgbaseDao;
+import ru.org.linux.msg.MsgbaseDao;
 import ru.org.linux.tag.TagName;
 import ru.org.linux.tag.TagRef;
 import ru.org.linux.user.Profile;

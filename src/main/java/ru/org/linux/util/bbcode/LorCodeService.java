@@ -21,7 +21,7 @@ import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.org.linux.spring.SiteConfig;
-import ru.org.linux.spring.dao.MessageText;
+import ru.org.linux.msg.MessageText;
 import ru.org.linux.user.User;
 import ru.org.linux.user.UserDao;
 import ru.org.linux.util.LorURL;

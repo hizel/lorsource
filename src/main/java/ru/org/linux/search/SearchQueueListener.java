@@ -37,7 +37,7 @@ import ru.org.linux.search.SearchQueueSender.UpdateMonth;
 import ru.org.linux.section.Section;
 import ru.org.linux.section.SectionService;
 import ru.org.linux.site.MessageNotFoundException;
-import ru.org.linux.spring.dao.MsgbaseDao;
+import ru.org.linux.msg.MsgbaseDao;
 import ru.org.linux.topic.Topic;
 import ru.org.linux.topic.TopicDao;
 import ru.org.linux.user.User;
