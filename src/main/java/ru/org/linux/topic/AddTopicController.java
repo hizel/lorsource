@@ -42,6 +42,8 @@ import ru.org.linux.gallery.Screenshot;
 import ru.org.linux.group.Group;
 import ru.org.linux.group.GroupDao;
 import ru.org.linux.group.GroupPermissionService;
+import ru.org.linux.msg.Msg;
+import ru.org.linux.msg.MsgMarkup;
 import ru.org.linux.poll.Poll;
 import ru.org.linux.poll.PollVariant;
 import ru.org.linux.search.SearchQueueSender;
@@ -174,18 +176,6 @@ public class AddTopicController {
     return new ModelAndView("add", params);
   }
 
-  private String processMessage(String msg, String mode) {
-    if (msg == null) {
-      return "";
-    }
-
-    if ("ntobr".equals(mode)) {
-      return toLorCodeFormatter.format(msg, false);
-    } else {
-      return msg;
-    }
-  }
-
   private ImmutableMap<String, Object> prepareModel(AddTopicRequest form, User currentUser) {
     ImmutableMap.Builder<String, Object> params = ImmutableMap.builder();
 
@@ -261,14 +251,16 @@ public class AddTopicController {
       errors.reject(null, "Недостаточно прав для постинга тем в эту группу");
     }
 
-    String message = processMessage(form.getMsg(), form.getMode());
+    Msg msg = new Msg(
+        form.getMsg() != null ? form.getMsg() : "",
+        "ntobr".equals(form.getMode()) ? MsgMarkup.BBCODE_ULB : MsgMarkup.BBCODE_TEX);
 
     if (user.isAnonymous()) {
-      if (message.length() > MAX_MESSAGE_LENGTH_ANONYMOUS) {
+      if (msg.getText().length() > MAX_MESSAGE_LENGTH_ANONYMOUS) {
         errors.rejectValue("msg", null, "Слишком большое сообщение");
       }
     } else {
-      if (message.length() > MAX_MESSAGE_LENGTH) {
+      if (msg.getText().length() > MAX_MESSAGE_LENGTH) {
         errors.rejectValue("msg", null, "Слишком большое сообщение");
       }
     }
@@ -310,7 +302,7 @@ public class AddTopicController {
               TopicTagService.namesToRefs(TagName.parseAndSanitizeTags(form.getTags())),
               poll,
               request.isSecure(),
-              message,
+              msg,
               imageObject
       );
 
@@ -346,7 +338,7 @@ public class AddTopicController {
       int msgid = topicService.addMessage(
               request,
               form,
-              message,
+              msg,
               group,
               user,
               scrn,

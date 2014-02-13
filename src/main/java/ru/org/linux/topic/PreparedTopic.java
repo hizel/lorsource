@@ -18,6 +18,7 @@ package ru.org.linux.topic;
 import com.google.common.collect.ImmutableList;
 import ru.org.linux.edithistory.EditHistoryDto;
 import ru.org.linux.group.Group;
+import ru.org.linux.msg.Msg;
 import ru.org.linux.poll.PreparedPoll;
 import ru.org.linux.section.Section;
 import ru.org.linux.site.DeleteInfo;
@@ -32,10 +33,9 @@ public final class PreparedTopic {
   private final User author;
   private final DeleteInfo deleteInfo;
   private final User deleteUser;
-  private final String processedMessage;
+  private final Msg preparedMsg;
   private final PreparedPoll poll;
   private final User commiter;
-  private final boolean lorcode;
   private final ImmutableList<TagRef> tags;
   private final Group group;
   private final Section section;
@@ -55,7 +55,7 @@ public final class PreparedTopic {
           User author,
           DeleteInfo deleteInfo,
           User deleteUser,
-          String processedMessage,
+          Msg preparedMsg,
           PreparedPoll poll,
           User commiter,
           List<TagRef> tags,
@@ -64,7 +64,6 @@ public final class PreparedTopic {
           EditHistoryDto lastHistoryDto,
           User lastEditor,
           int editorCount,
-          boolean lorcode,
           PreparedImage image,
           String postscoreInfo,
           Remark remark) {
@@ -72,10 +71,9 @@ public final class PreparedTopic {
     this.author = author;
     this.deleteInfo = deleteInfo;
     this.deleteUser = deleteUser;
-    this.processedMessage = processedMessage;
+    this.preparedMsg = preparedMsg;
     this.poll = poll;
     this.commiter = commiter;
-    this.lorcode = lorcode;
     this.postscoreInfo = postscoreInfo;
     if (tags!=null) {
       this.tags=ImmutableList.copyOf(tags);
@@ -107,8 +105,8 @@ public final class PreparedTopic {
     return deleteUser;
   }
 
-  public String getProcessedMessage() {
-    return processedMessage;
+  public Msg getPreparedMsg() {
+    return preparedMsg;
   }
 
   public PreparedPoll getPoll() {
@@ -145,10 +143,6 @@ public final class PreparedTopic {
 
   public Section getSection() {
     return section;
-  }
-
-  public boolean isLorcode() {
-    return lorcode;
   }
 
   public PreparedImage getImage() {

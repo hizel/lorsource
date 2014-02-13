@@ -39,6 +39,8 @@ import ru.org.linux.edithistory.EditHistoryService;
 import ru.org.linux.group.Group;
 import ru.org.linux.group.GroupDao;
 import ru.org.linux.group.GroupPermissionService;
+import ru.org.linux.msg.Msg;
+import ru.org.linux.msg.MsgMarkup;
 import ru.org.linux.poll.Poll;
 import ru.org.linux.poll.PollDao;
 import ru.org.linux.poll.PollNotFoundException;
@@ -272,8 +274,8 @@ public class EditTopicController {
 
     Map<String, Object> params = new HashMap<>();
 
-    final Topic message = messageDao.getById(msgid);
-    PreparedTopic preparedTopic = prepareService.prepareTopic(message, request.isSecure(), tmpl.getCurrentUser());
+    final Topic topic = messageDao.getById(msgid);
+    PreparedTopic preparedTopic = prepareService.prepareTopic(topic, request.isSecure(), tmpl.getCurrentUser());
     Group group = preparedTopic.getGroup();
 
     User user = tmpl.getCurrentUser();
@@ -287,7 +289,7 @@ public class EditTopicController {
       throw new AccessViolationException("это сообщение нельзя править");
     }
 
-    params.put("message", message);
+    params.put("message", topic);
     params.put("preparedMessage", preparedTopic);
     params.put("group", group);
     params.put("topicMenu", prepareService.getTopicMenu(
@@ -307,7 +309,7 @@ public class EditTopicController {
       }
     }
 
-    List<EditHistoryDto> editInfoList = editHistoryService.getEditInfo(message.getId(), EditHistoryObjectTypeEnum.TOPIC);
+    List<EditHistoryDto> editInfoList = editHistoryService.getEditInfo(topic.getId(), EditHistoryObjectTypeEnum.TOPIC);
 
     boolean preview = request.getParameter("preview") != null;
     if (preview) {
@@ -329,43 +331,43 @@ public class EditTopicController {
 
     if (commit) {
       user.checkCommit();
-      if (message.isCommited()) {
+      if (topic.isCommited()) {
         throw new BadInputException("сообщение уже подтверждено");
       }
     }
 
-    params.put("commit", !message.isCommited() && preparedTopic.getSection().isPremoderated() && user.isModerator());
+    params.put("commit", !topic.isCommited() && preparedTopic.getSection().isPremoderated() && user.isModerator());
 
-    Topic newMsg = new Topic(group, message, form, publish);
+    Topic newTopic = new Topic(group, topic, form, publish);
 
     boolean modified = false;
 
-    if (!message.getTitle().equals(newMsg.getTitle())) {
+    if (!topic.getTitle().equals(newTopic.getTitle())) {
       modified = true;
     }
     
     if (form.getMsg()!=null) {
-      String oldText = msgbaseDao.getMessageText(message.getId()).getText();
+      String oldText = msgbaseDao.getMsg(topic.getId()).getText();
   
       if (!oldText.equals(form.getMsg())) {
         modified = true;
       }
     }
     
-    if (message.getLinktext() == null) {
-      if (newMsg.getLinktext() != null) {
+    if (topic.getLinktext() == null) {
+      if (newTopic.getLinktext() != null) {
         modified = true;
       }
-    } else if (!message.getLinktext().equals(newMsg.getLinktext())) {
+    } else if (!topic.getLinktext().equals(newTopic.getLinktext())) {
       modified = true;
     }
 
     if (group.isLinksAllowed()) {
-      if (message.getUrl() == null) {
-        if (newMsg.getUrl() != null) {
+      if (topic.getUrl() == null) {
+        if (newTopic.getUrl() != null) {
           modified = true;
         }
-      } else if (!message.getUrl().equals(newMsg.getUrl())) {
+      } else if (!topic.getUrl().equals(newTopic.getUrl())) {
         modified = true;
       }
     }
@@ -385,10 +387,10 @@ public class EditTopicController {
     }
 
     if (changeGroupId != null) {
-      if (message.getGroupId() != changeGroupId) {
+      if (topic.getGroupId() != changeGroupId) {
         Group changeGroup = groupDao.getGroup(changeGroupId);
 
-        int section = message.getSectionId();
+        int section = topic.getSectionId();
 
         if (changeGroup.getSectionId() != section) {
           throw new AccessViolationException("Can't move topics between sections");
@@ -399,16 +401,11 @@ public class EditTopicController {
     Poll newPoll = null;
 
     if (preparedTopic.getSection().isPollPostAllowed() && form.getPoll() != null && tmpl.isModeratorSession()) {
-      newPoll = buildNewPoll(message, form);
+      newPoll = buildNewPoll(topic, form);
     }
 
-    String newText;
-
-    if (form.getMsg() != null) {
-      newText = form.getMsg();
-    } else {
-      newText = msgbaseDao.getMessageText(message.getId()).getText();
-    }
+    Msg newMsg = (form.getMsg() != null) ?
+        new Msg(form.getMsg(), MsgMarkup.BBCODE_TEX) : msgbaseDao.getMsg(topic.getId());
 
     if (form.getEditorBonus() != null) {
       ImmutableSet<Integer> editors = ImmutableSet.copyOf(
@@ -416,7 +413,7 @@ public class EditTopicController {
                       Iterables.filter(editInfoList, new Predicate<EditHistoryDto>() {
                         @Override
                         public boolean apply(EditHistoryDto input) {
-                          return input.getEditor() != message.getUid();
+                          return input.getEditor() != topic.getUid();
                         }
                       }), new Function<EditHistoryDto, Integer>() {
                 @Override
@@ -438,11 +435,11 @@ public class EditTopicController {
 
     if (!preview && !errors.hasErrors()) {
       boolean changed = topicService.updateAndCommit(
-              newMsg,
-              message,
+              newTopic,
+              topic,
               user,
               newTags,
-              newText,
+              newMsg,
               commit,
               changeGroupId,
               form.getBonus(),
@@ -452,8 +449,8 @@ public class EditTopicController {
       );
 
       if (changed || commit || publish) {
-        if (!newMsg.isDraft()) {
-          searchQueueSender.updateMessageOnly(newMsg.getId());
+        if (!newTopic.isDraft()) {
+          searchQueueSender.updateMessageOnly(newTopic.getId());
         }
 
         if (commit) {
@@ -461,10 +458,10 @@ public class EditTopicController {
         }
 
         if (!publish || !preparedTopic.getSection().isPremoderated()) {
-          return new ModelAndView(new RedirectView(TopicLinkBuilder.baseLink(message).forceLastmod().build()));
+          return new ModelAndView(new RedirectView(TopicLinkBuilder.baseLink(topic).forceLastmod().build()));
         } else {
           params.put("moderated", true);
-          params.put("url", TopicLinkBuilder.baseLink(message).forceLastmod().build());
+          params.put("url", TopicLinkBuilder.baseLink(topic).forceLastmod().build());
 
           return new ModelAndView("add-done-moderated", params);
         }
@@ -473,16 +470,16 @@ public class EditTopicController {
       }
     }
 
-    params.put("newMsg", newMsg);
+    params.put("newMsg", newTopic);
 
     params.put(
             "newPreparedMessage",
             prepareService.prepareTopicPreview(
-                    newMsg,
+                    newTopic,
                     TopicTagService.namesToRefs(newTags),
                     newPoll,
                     request.isSecure(),
-                    newText,
+                    newMsg,
                     null
             )
     );

@@ -34,6 +34,7 @@ import ru.org.linux.edithistory.EditHistoryObjectTypeEnum;
 import ru.org.linux.edithistory.EditHistoryService;
 import ru.org.linux.group.Group;
 import ru.org.linux.group.GroupDao;
+import ru.org.linux.msg.Msg;
 import ru.org.linux.section.SectionScrollModeEnum;
 import ru.org.linux.section.SectionService;
 import ru.org.linux.site.DeleteInfo;
@@ -228,16 +229,16 @@ public class TopicDao {
    */
   @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
   public int saveNewMessage(
-          final Topic msg,
+          final Topic topic,
           final User user,
-          String text,
+          Msg msg,
           final String userAgent,
           final Group group
   ) {
     final int msgid = allocateMsgid();
 
-    String url = msg.getUrl();
-    String linktext = msg.getLinktext();
+    String url = topic.getUrl();
+    String linktext = topic.getLinktext();
 
     final String finalUrl = url;
     final String finalLinktext = linktext;
@@ -248,13 +249,13 @@ public class TopicDao {
               public String doInPreparedStatement(PreparedStatement pst) throws SQLException, DataAccessException {
                 pst.setInt(1, group.getId());
                 pst.setInt(2, user.getId());
-                pst.setString(3, msg.getTitle());
+                pst.setString(3, topic.getTitle());
                 pst.setString(4, finalUrl);
                 pst.setInt(5, msgid);
                 pst.setString(6, finalLinktext);
                 pst.setString(7, userAgent);
-                pst.setString(8, msg.getPostIP());
-                pst.setBoolean(9, msg.isDraft());
+                pst.setString(8, topic.getPostIP());
+                pst.setBoolean(9, topic.isDraft());
                 pst.executeUpdate();
 
                 return null;
@@ -262,64 +263,64 @@ public class TopicDao {
             }
     );
 
-    msgbaseDao.addMsg(msgid, text);
+    msgbaseDao.addMsg(msgid, msg);
 
     return msgid;
   }
 
   @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-  public boolean updateMessage(Topic oldMsg, Topic msg, User editor, List<String> newTags, String newText) {
+  public boolean updateMessage(Topic oldTopic, Topic topic, User editor, List<String> newTags, Msg msg) {
     EditHistoryDto editHistoryDto = new EditHistoryDto();
 
-    editHistoryDto.setMsgid(msg.getId());
+    editHistoryDto.setMsgid(topic.getId());
     editHistoryDto.setObjectType(EditHistoryObjectTypeEnum.TOPIC);
     editHistoryDto.setEditor(editor.getId());
 
     boolean modified = false;
 
-    String oldText = msgbaseDao.getMessageText(msg.getId()).getText();
+    Msg oldMsg = msgbaseDao.getMsg(topic.getId());
 
-    if (!oldText.equals(newText)) {
-      editHistoryDto.setOldmessage(oldText);
+    if (!oldMsg.getText().equals(msg.getText())) {
+      editHistoryDto.setOldmessage(oldMsg.getText());
       modified = true;
 
-      msgbaseDao.updateMessage(msg.getId(), newText);
+      msgbaseDao.updateMsg(topic.getId(), msg);
     }
 
-    if (!oldMsg.getTitle().equals(msg.getTitle())) {
+    if (!oldTopic.getTitle().equals(topic.getTitle())) {
       modified = true;
-      editHistoryDto.setOldtitle(oldMsg.getTitle());
+      editHistoryDto.setOldtitle(oldTopic.getTitle());
 
       namedJdbcTemplate.update(
         "UPDATE topics SET title=:title WHERE id=:id",
-        ImmutableMap.of("title", msg.getTitle(), "id", msg.getId())
+        ImmutableMap.of("title", topic.getTitle(), "id", topic.getId())
       );
     }
 
-    if (!equalStrings(oldMsg.getLinktext(), msg.getLinktext())) {
+    if (!equalStrings(oldTopic.getLinktext(), topic.getLinktext())) {
       modified = true;
-      editHistoryDto.setOldlinktext(oldMsg.getLinktext());
+      editHistoryDto.setOldlinktext(oldTopic.getLinktext());
 
       namedJdbcTemplate.update(
         "UPDATE topics SET linktext=:linktext WHERE id=:id",
-        ImmutableMap.of("linktext", msg.getLinktext(), "id", msg.getId())
+        ImmutableMap.of("linktext", topic.getLinktext(), "id", topic.getId())
       );
     }
 
-    if (!equalStrings(oldMsg.getUrl(), msg.getUrl())) {
+    if (!equalStrings(oldTopic.getUrl(), topic.getUrl())) {
       modified = true;
-      editHistoryDto.setOldurl(oldMsg.getUrl());
+      editHistoryDto.setOldurl(oldTopic.getUrl());
 
       namedJdbcTemplate.update(
         "UPDATE topics SET url=:url WHERE id=:id",
-        ImmutableMap.of("url", msg.getUrl(), "id", msg.getId())
+        ImmutableMap.of("url", topic.getUrl(), "id", topic.getId())
       );
     }
 
     if (newTags != null) {
-      List<String> oldTags = topicTagService.getTags(msg.getId());
+      List<String> oldTags = topicTagService.getTags(topic.getId());
 
-      boolean modifiedTags = topicTagService.updateTags(msg.getId(), oldTags, newTags);
+      boolean modifiedTags = topicTagService.updateTags(topic.getId(), oldTags, newTags);
 
       if (modifiedTags) {
         editHistoryDto.setOldtags(TagService.toString(oldTags));
@@ -327,18 +328,18 @@ public class TopicDao {
       }
     }
 
-    if (oldMsg.isMinor() != msg.isMinor()) {
+    if (oldTopic.isMinor() != topic.isMinor()) {
       namedJdbcTemplate.update("UPDATE topics SET minor=:minor WHERE id=:id",
-              ImmutableMap.of("minor", msg.isMinor(), "id", msg.getId()));
+              ImmutableMap.of("minor", topic.isMinor(), "id", topic.getId()));
 
-      editHistoryDto.setOldminor(oldMsg.isMinor());
+      editHistoryDto.setOldminor(oldTopic.isMinor());
 
       modified = true;
     }
 
     if (modified) {
       editHistoryService.insert(editHistoryDto);
-      updateLastmod(msg.getId(), false);
+      updateLastmod(topic.getId(), false);
     }
 
     return modified;

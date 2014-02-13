@@ -23,7 +23,7 @@
     <lor:image preparedMessage="${preparedMessage}" showImage="true"/>
   </c:if>
 
-  ${preparedMessage.processedMessage}
+  ${preparedMessage.preparedMsg.text}
 
   <c:if test="${preparedMessage.section.imagepost}">
     <lor:image preparedMessage="${preparedMessage}" showInfo="true"/>

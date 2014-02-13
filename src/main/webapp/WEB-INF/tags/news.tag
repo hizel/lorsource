@@ -112,7 +112,7 @@
     <lor:image preparedMessage="${preparedMessage}" showImage="true"/>
   </c:if>
   
-  ${preparedMessage.processedMessage}
+  ${preparedMessage.preparedMsg.text}
 <%
   if (url != null) {
     if (url.isEmpty()) {

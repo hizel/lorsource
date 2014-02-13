@@ -16,4 +16,8 @@ public class Msg {
   public MsgMarkup getMarkup() {
     return markup;
   }
+
+  public boolean isBBCode() {
+    return markup == MsgMarkup.BBCODE_TEX || markup == MsgMarkup.BBCODE_ULB;
+  }
 }

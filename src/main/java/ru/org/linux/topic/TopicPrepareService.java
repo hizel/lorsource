@@ -32,6 +32,8 @@ import ru.org.linux.gallery.ImageDao;
 import ru.org.linux.group.Group;
 import ru.org.linux.group.GroupDao;
 import ru.org.linux.group.GroupPermissionService;
+import ru.org.linux.msg.Msg;
+import ru.org.linux.msg.PrepareMsg;
 import ru.org.linux.poll.Poll;
 import ru.org.linux.poll.PollNotFoundException;
 import ru.org.linux.poll.PollPrepareService;
@@ -106,6 +108,9 @@ public class TopicPrepareService {
 
   @Autowired
   private TopicTagService topicTagService;
+
+  @Autowired
+  private PrepareMsg prepareMsg;
   
   public PreparedTopic prepareTopic(Topic message, boolean secure, User user) {
     return prepareMessage(
@@ -115,12 +120,12 @@ public class TopicPrepareService {
             null,
             secure,
             user,
-            msgbaseDao.getMessageText(message.getId()),
+            msgbaseDao.getMsg(message.getId()),
             null
     );
   }
 
-  public PreparedTopic prepareTopic(Topic message, List<TagRef> tags, boolean secure, User user, MessageText text) {
+  public PreparedTopic prepareTopic(Topic message, List<TagRef> tags, boolean secure, User user, Msg msg) {
     return prepareMessage(
             message,
             tags,
@@ -128,7 +133,7 @@ public class TopicPrepareService {
             null,
             secure,
             user,
-            text,
+            msg,
             null
     );
   }
@@ -138,7 +143,7 @@ public class TopicPrepareService {
           List<TagRef> tags,
           Poll newPoll,
           boolean secure,
-          String text,
+          Msg msg,
           Image image
   ) {
     return prepareMessage(
@@ -148,7 +153,7 @@ public class TopicPrepareService {
             newPoll!=null?pollPrepareService.preparePollPreview(newPoll):null,
             secure,
             null,
-            new MessageText(text, true),
+            msg,
             image
     );
   }
@@ -170,7 +175,7 @@ public class TopicPrepareService {
           PreparedPoll poll,
           boolean secure, 
           User user,
-          MessageText text,
+          Msg msg,
           @Nullable Image image) {
     try {
       Group group = groupDao.getGroup(message.getGroupId());
@@ -227,23 +232,8 @@ public class TopicPrepareService {
         editCount = 0;
       }
 
-      String processedMessage;
-
-      if (text.isLorcode()) {
-        if (minimizeCut) {
-          String url = siteConfig.getMainUrl() + message.getLink();
-          processedMessage = lorCodeService.parseTopicWithMinimizedCut(
-                  text.getText(),
-                  url,
-                  secure,
-                  ! topicPermissionService.followInTopic(message, author)
-          );
-        } else {
-          processedMessage = lorCodeService.parseTopic(text.getText(), secure, ! topicPermissionService.followInTopic(message, author));
-        }
-      } else {
-        processedMessage = "<p>" + text.getText();
-      }
+      String url = siteConfig.getMainUrl() + message.getLink();
+      Msg preparedMsg = prepareMsg.prepareTopic(msg, secure, !topicPermissionService.followInTopic(message, author), minimizeCut, url);
 
       PreparedImage preparedImage = null;
 
@@ -268,7 +258,7 @@ public class TopicPrepareService {
               author, 
               deleteInfo, 
               deleteUser, 
-              processedMessage,
+              preparedMsg,
               preparedPoll,
               commiter, 
               tags,
@@ -277,8 +267,7 @@ public class TopicPrepareService {
               editHistoryDto,
               lastEditor, 
               editCount,
-              text.isLorcode(),
-              preparedImage, 
+              preparedImage,
               TopicPermissionService.getPostScoreInfo(postscore),
               remark);
     } catch (PollNotFoundException e) {
@@ -331,7 +320,7 @@ public class TopicPrepareService {
   ) {
     List<PersonalizedPreparedTopic> pm = new ArrayList<>(messages.size());
 
-    Map<Integer,MessageText> textMap = loadTexts(messages);
+    Map<Integer,Msg> textMap = loadTexts(messages);
     ImmutableListMultimap<Integer,TagRef> tags = topicTagService.getTagRefs(messages);
 
     for (Topic message : messages) {
@@ -361,16 +350,16 @@ public class TopicPrepareService {
     return pm;
   }
 
-  private Map<Integer, MessageText> loadTexts(List<Topic> messages) {
-    return msgbaseDao.getMessageText(
-            Lists.newArrayList(
-                    Iterables.transform(messages, new Function<Topic, Integer>() {
-                      @Override
-                      public Integer apply(Topic comment) {
-                        return comment.getId();
-                      }
-                    })
-            )
+  private Map<Integer, Msg> loadTexts(List<Topic> messages) {
+    return msgbaseDao.getMsgs(
+        Lists.newArrayList(
+            Iterables.transform(messages, new Function<Topic, Integer>() {
+              @Override
+              public Integer apply(Topic comment) {
+                return comment.getId();
+              }
+            })
+        )
     );
   }
 
@@ -384,7 +373,7 @@ public class TopicPrepareService {
   public List<PreparedTopic> prepareMessages(List<Topic> messages, boolean secure) {
     List<PreparedTopic> pm = new ArrayList<>(messages.size());
 
-    Map<Integer,MessageText> textMap = loadTexts(messages);
+    Map<Integer,Msg> textMap = loadTexts(messages);
     ImmutableListMultimap<Integer,TagRef> tags = topicTagService.getTagRefs(messages);
 
     for (Topic message : messages) {

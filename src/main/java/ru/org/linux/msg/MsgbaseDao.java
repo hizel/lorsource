@@ -62,7 +62,7 @@ public class MsgbaseDao {
       public Msg mapRow(ResultSet resultSet, int i) throws SQLException {
         return new Msg(resultSet.getString("message"), MsgMarkup.valueOf(resultSet.getString("markup")));
       }
-    });
+    }, msgid);
     if (msgs.isEmpty()) {
       return null;
     } else {
@@ -74,6 +74,10 @@ public class MsgbaseDao {
     jdbcTemplate.update("INSERT INTO msgbase(id, message) values(?,?)", msgid, text);
   }
 
+  public void addMsg(int msgid, Msg msg) {
+    jdbcTemplate.update("INSERT INTO msgbase(id, message, markup) values(?,?,?::markup_type)", msgid, msg.getText(), msg.getMarkup().toString());
+  }
+
   public Map<Integer, Msg> getMsgs(Collection<Integer> msgids) {
     if (msgids.isEmpty()) {
       return ImmutableMap.of();
@@ -81,7 +85,9 @@ public class MsgbaseDao {
 
     final Map<Integer, Msg> out = Maps.newHashMapWithExpectedSize(msgids.size());
 
-    jdbcTemplate.query("SELECT message, markup, id FROM msgbase WHERE id IN (?)", new RowCallbackHandler() {
+    namedJdbcTemplate.query("SELECT message, markup, id FROM msgbase WHERE id IN (:list)",
+        ImmutableMap.of("list", msgids),
+        new RowCallbackHandler() {
       @Override
       public void processRow(ResultSet resultSet) throws SQLException {
         out.put(
@@ -136,8 +142,13 @@ public class MsgbaseDao {
     return out;
   }
 
+  @Deprecated
   public void updateMessage(int msgid, String text) {
     jdbcTemplate.update("UPDATE msgbase SET message=? WHERE id=?", text, msgid);
+  }
+
+  public void updateMsg(int msgid, Msg msg) {
+    jdbcTemplate.update("UPDATE msgbase SET message=?, markup=?::markup_type WHERE id=?", msg.getText(), msg.getMarkup().toString(), msgid);
   }
 
   public void appendMessage(int msgid, String text) {

@@ -46,13 +46,13 @@ public class PrepareMsg {
     return lorCodeService.parseComment(ret, secure, nofollow);
   }
 
-  public String prepareTopic(Msg msg, boolean secure, boolean nofollow, boolean min, String url, boolean follow) {
+  public Msg prepareTopic(Msg msg, boolean secure, boolean nofollow, boolean min, String url) {
     String ret;
     if(msg.getMarkup() == MsgMarkup.PLAIN) {
-      return "<p>" + msg.getText() + "</p>";
+      return new Msg("<p>" + msg.getText() + "</p>", msg.getMarkup());
     }
     if(msg.getMarkup() == MsgMarkup.MARKDOWN) {
-      return msg.getText();
+      return new Msg(msg.getText(), msg.getMarkup());
     }
 
     if(msg.getMarkup() == MsgMarkup.BBCODE_ULB) {
@@ -62,9 +62,9 @@ public class PrepareMsg {
     }
 
     if(min) {
-      return lorCodeService.parseTopicWithMinimizedCut(ret, url, secure, follow);
+      return new Msg(lorCodeService.parseTopicWithMinimizedCut(ret, url, secure, nofollow), msg.getMarkup());
     } else {
-      return lorCodeService.parseTopic(ret, secure, follow);
+      return new Msg(lorCodeService.parseTopic(ret, secure, nofollow), msg.getMarkup());
     }
   }
 

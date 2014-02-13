@@ -213,7 +213,7 @@ public class GroupPermissionService {
       return true;
     }
 
-    if (!topic.isLorcode()) {
+    if (!topic.getPreparedMsg().isBBCode()) {
       return false;
     }
 

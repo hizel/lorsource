@@ -28,6 +28,8 @@ import ru.org.linux.auth.IPBlockDao;
 import ru.org.linux.auth.IPBlockInfo;
 import ru.org.linux.comment.*;
 import ru.org.linux.group.Group;
+import ru.org.linux.msg.Msg;
+import ru.org.linux.msg.MsgMarkup;
 import ru.org.linux.paginator.PagesInfo;
 import ru.org.linux.search.MoreLikeThisService;
 import ru.org.linux.search.MoreLikeThisTopic;
@@ -182,8 +184,8 @@ public class TopicController {
 
     List<TagRef> tags = topicTagService.getTagRefs(topic);
 
-    MessageText messageText = msgbaseDao.getMessageText(topic.getId());
-    String plainText = lorCodeService.extractPlainText(messageText);
+    Msg msg = msgbaseDao.getMsg(topic.getId());
+    String plainText = lorCodeService.extractPlainText(msg);
 
     Future<List<List<MoreLikeThisTopic>>> moreLikeThis = moreLikeThisService.search(topic, tags, plainText);
 
@@ -192,7 +194,7 @@ public class TopicController {
             tags,
             request.isSecure(),
             tmpl.getCurrentUser(),
-            messageText
+            msg
     );
 
     Group group = preparedMessage.getGroup();
@@ -247,7 +249,7 @@ public class TopicController {
 
     CommentList comments = commentService.getCommentList(topic, showDeleted);
 
-    if (messageText.isLorcode()) {
+    if (msg.isBBCode()) {
       params.put("ogDescription", lorCodeService.trimPlainText(plainText, 250, true));
     }
 
@@ -351,14 +353,14 @@ public class TopicController {
 
     List<TagRef> tags = topicTagService.getTagRefs(topic);
 
-    MessageText messageText = msgbaseDao.getMessageText(topic.getId());
+    Msg msg = msgbaseDao.getMsg(topic.getId());
 
     PreparedTopic preparedMessage = messagePrepareService.prepareTopic(
             topic,
             tags,
             request.isSecure(),
             tmpl.getCurrentUser(),
-            messageText
+            msg
     );
 
     Group group = preparedMessage.getGroup();

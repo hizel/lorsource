@@ -20,6 +20,8 @@ import org.apache.commons.httpclient.URI;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.org.linux.msg.Msg;
+import ru.org.linux.msg.MsgMarkup;
 import ru.org.linux.spring.SiteConfig;
 import ru.org.linux.msg.MessageText;
 import ru.org.linux.user.User;
@@ -106,6 +108,20 @@ public class LorCodeService {
     }
   }
 
+  public String extractPlainText(Msg msg) {
+    switch (msg.getMarkup()) {
+      case BBCODE_TEX:
+      case BBCODE_ULB:
+        return extractPlainTextFromLorcode(msg.getText());
+      case MARKDOWN:
+      case PLAIN:
+      default:
+        return Jsoup.parse(msg.getText()).text();
+    }
+  }
+
+
+  @Deprecated
   public String extractPlainText(MessageText text) {
     if (text.isLorcode()) {
       return extractPlainTextFromLorcode(text.getText());

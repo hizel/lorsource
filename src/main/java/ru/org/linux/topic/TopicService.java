@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.org.linux.gallery.ImageDao;
 import ru.org.linux.gallery.Screenshot;
 import ru.org.linux.group.Group;
+import ru.org.linux.msg.Msg;
 import ru.org.linux.poll.PollDao;
 import ru.org.linux.poll.PollNotFoundException;
 import ru.org.linux.poll.PollVariant;
@@ -91,7 +92,7 @@ public class TopicService {
   public int addMessage(
           HttpServletRequest request,
           AddTopicRequest form,
-          String message,
+          Msg msg,
           Group group,
           User user,
           Screenshot scrn,
@@ -100,7 +101,7 @@ public class TopicService {
     final int msgid = topicDao.saveNewMessage(
             previewMsg,
             user,
-            message,
+            msg,
             request.getHeader("User-Agent"),
             group
     );
@@ -131,9 +132,9 @@ public class TopicService {
 
     if (!previewMsg.isDraft()) {
       if (section.isPremoderated()) {
-        sendEvents(message, msgid, ImmutableList.<String>of(), user.getId());
+        sendEvents(msg, msgid, ImmutableList.<String>of(), user.getId());
       } else {
-        sendEvents(message, msgid, tags, user.getId());
+        sendEvents(msg, msgid, tags, user.getId());
       }
     }
 
@@ -146,14 +147,14 @@ public class TopicService {
   /**
    * Отправляет уведомления типа REF (ссылка на пользователя) и TAG (уведомление по тегу)
    *
-   * @param message текст сообщения
+   * @param msg текст сообщения
    * @param msgid идентификатор сообщения
    * @param author автор сообщения (ему не будет отправлено уведомление)
    */
-  private void sendEvents(String message, int msgid, List<String> tags, int author) {
+  private void sendEvents(Msg msg, int msgid, List<String> tags, int author) {
     Set<Integer> notifiedUsers = userEventService.getNotifiedUsers(msgid);
 
-    Set<User> userRefs = lorCodeService.getReplierFromMessage(message);
+    Set<User> userRefs = lorCodeService.getReplierFromMessage(msg.getText());
 
     // оповещение пользователей по тегам
     List<Integer> userIdListByTags = userTagService.getUserIdListByTags(author, tags);
@@ -251,11 +252,11 @@ public class TopicService {
 
   @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
   public boolean updateAndCommit(
-          Topic newMsg,
-          Topic oldMsg,
+          Topic newTopic,
+          Topic oldTopic,
           User user,
           List<String> newTags,
-          String newText,
+          Msg newMsg1,
           boolean commit,
           Integer changeGroupId,
           int bonus,
@@ -263,42 +264,42 @@ public class TopicService {
           boolean multiselect,
           Map<Integer, Integer> editorBonus
   )  {
-    boolean modified = topicDao.updateMessage(oldMsg, newMsg, user, newTags, newText);
+    boolean modified = topicDao.updateMessage(oldTopic, newTopic, user, newTags, newMsg1);
 
-    if (!newMsg.isDraft() && !newMsg.isExpired()) {
-      Section section = sectionService.getSection(oldMsg.getSectionId());
+    if (!newTopic.isDraft() && !newTopic.isExpired()) {
+      Section section = sectionService.getSection(oldTopic.getSectionId());
 
-      if (section.isPremoderated() && !oldMsg.isCommited() && !commit) {
-        sendEvents(newText, oldMsg.getId(), ImmutableList.<String>of(), oldMsg.getUid());
+      if (section.isPremoderated() && !oldTopic.isCommited() && !commit) {
+        sendEvents(newMsg1, oldTopic.getId(), ImmutableList.<String>of(), oldTopic.getUid());
       } else {
-        sendEvents(newText, oldMsg.getId(), newTags, oldMsg.getUid());
+        sendEvents(newMsg1, oldTopic.getId(), newTags, oldTopic.getUid());
       }
     }
 
     try {
-      if (pollVariants!=null && pollDao.updatePoll(oldMsg, pollVariants, multiselect)) {
+      if (pollVariants!=null && pollDao.updatePoll(oldTopic, pollVariants, multiselect)) {
         modified = true;
       }
     } catch (PollNotFoundException e) {
       throw new RuntimeException(e);
     }
 
-    if (oldMsg.isDraft() && !newMsg.isDraft()) {
-      topicDao.publish(newMsg);
+    if (oldTopic.isDraft() && !newTopic.isDraft()) {
+      topicDao.publish(newTopic);
     }
 
     if (commit) {
       if (changeGroupId != null) {
-        if (oldMsg.getGroupId() != changeGroupId) {
-          topicDao.changeGroup(oldMsg, changeGroupId);
+        if (oldTopic.getGroupId() != changeGroupId) {
+          topicDao.changeGroup(oldTopic, changeGroupId);
         }
       }
 
-      commit(oldMsg, user, bonus, editorBonus);
+      commit(oldTopic, user, bonus, editorBonus);
     }
 
     if (modified) {
-      logger.info("сообщение " + oldMsg.getId() + " исправлено " + user.getNick());
+      logger.info("сообщение " + oldTopic.getId() + " исправлено " + user.getNick());
     }
 
     return modified;
