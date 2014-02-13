@@ -29,6 +29,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import ru.org.linux.msg.MsgbaseDao;
 import ru.org.linux.site.MessageNotFoundException;
 import ru.org.linux.user.User;
 import ru.org.linux.util.StringUtil;
@@ -79,16 +80,13 @@ public class CommentDao {
 
   private JdbcTemplate jdbcTemplate;
 
-  private SimpleJdbcInsert insertMsgbase;
-
   @Autowired
   public void setDataSource(DataSource dataSource) {
     jdbcTemplate = new JdbcTemplate(dataSource);
-
-    insertMsgbase = new SimpleJdbcInsert(dataSource);
-    insertMsgbase.setTableName("msgbase");
-    insertMsgbase.usingColumns("id", "message");
   }
+
+  @Autowired
+  private MsgbaseDao msgbaseDao;
 
   /**
      * Получить комментарий по id
@@ -229,34 +227,31 @@ public class CommentDao {
     final int msgid = jdbcTemplate.queryForObject("select nextval('s_msgid') as msgid", Integer.class);
 
     jdbcTemplate.execute(
-      "INSERT INTO comments (id, userid, title, postdate, replyto, deleted, topic, postip, ua_id) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, 'f', ?, ?::inet, create_user_agent(?))",
-      new PreparedStatementCallback<Object>() {
-        @Override
-        public Object doInPreparedStatement(PreparedStatement pst) throws SQLException, DataAccessException {
-          pst.setInt(1, msgid);
-          pst.setInt(2, comment.getUserid());
-          pst.setString(3, comment.getTitle());
-          pst.setInt(5, comment.getTopicId());
-          pst.setString(6, comment.getPostIP());
-          pst.setString(7, userAgent);
+        "INSERT INTO comments (id, userid, title, postdate, replyto, deleted, topic, postip, ua_id) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, 'f', ?, ?::inet, create_user_agent(?))",
+        new PreparedStatementCallback<Object>() {
+          @Override
+          public Object doInPreparedStatement(PreparedStatement pst) throws SQLException, DataAccessException {
+            pst.setInt(1, msgid);
+            pst.setInt(2, comment.getUserid());
+            pst.setString(3, comment.getTitle());
+            pst.setInt(5, comment.getTopicId());
+            pst.setString(6, comment.getPostIP());
+            pst.setString(7, userAgent);
 
-          if (comment.getReplyTo() != 0) {
-            pst.setInt(4, comment.getReplyTo());
-          } else {
-            pst.setNull(4, Types.INTEGER);
+            if (comment.getReplyTo() != 0) {
+              pst.setInt(4, comment.getReplyTo());
+            } else {
+              pst.setNull(4, Types.INTEGER);
+            }
+
+            pst.executeUpdate();
+
+            return null;
           }
-
-          pst.executeUpdate();
-
-          return null;
         }
-      }
     );
 
-    insertMsgbase.execute(ImmutableMap.<String, Object>of(
-      "id", msgid,
-      "message", message)
-    );
+    msgbaseDao.addMsg(msgid, message);
 
     return msgid;
   }
@@ -274,12 +269,7 @@ public class CommentDao {
       newComment.getTitle(),
       oldComment.getId()
     );
-
-    jdbcTemplate.update(
-      "UPDATE msgbase SET message=? WHERE id=?",
-      commentBody,
-      oldComment.getId()
-    );
+    msgbaseDao.updateMessage(oldComment.getId(), commentBody);
   }
 
   /**

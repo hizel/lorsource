@@ -262,11 +262,7 @@ public class TopicDao {
             }
     );
 
-    // insert message text
-    jdbcTemplate.update(
-            "INSERT INTO msgbase (id, message) values (?,?)",
-            msgid, text
-    );
+    msgbaseDao.addMsg(msgid, text);
 
     return msgid;
   }

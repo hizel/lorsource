@@ -70,6 +70,10 @@ public class MsgbaseDao {
     }
   }
 
+  public void addMsg(int msgid, String text) {
+    jdbcTemplate.update("INSERT INTO msgbase(id, message) values(?,?)", msgid, text);
+  }
+
   public Map<Integer, Msg> getMsgs(Collection<Integer> msgids) {
     if (msgids.isEmpty()) {
       return ImmutableMap.of();
