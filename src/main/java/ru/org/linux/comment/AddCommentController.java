@@ -31,6 +31,8 @@ import ru.org.linux.auth.IPBlockInfo;
 import ru.org.linux.csrf.CSRFNoAuto;
 import ru.org.linux.search.SearchQueueSender;
 import ru.org.linux.site.Template;
+import ru.org.linux.spring.dao.MarkupText;
+import ru.org.linux.spring.dao.MarkupTextType;
 import ru.org.linux.topic.PreparedTopic;
 import ru.org.linux.topic.TopicPermissionService;
 import ru.org.linux.topic.TopicPrepareService;
@@ -89,10 +91,6 @@ public class AddCommentController {
 
     Map<String, Object> params = new HashMap<>();
 
-    if (add.getMode() == null) {
-      add.setMode(tmpl.getFormatMode());
-    }
-
     commentService.prepareReplyto(add, params, request);
 
     int postscore = topicPermissionService.getPostscore(add.getTopic());
@@ -123,8 +121,8 @@ public class AddCommentController {
       throw new AccessViolationException("Это сообщение нельзя комментировать");
     }
 
-    if (add.getMode() == null) {
-      add.setMode(tmpl.getFormatMode());
+    if (add.getMarkup() == null) {
+      add.setMarkup(tmpl.getFormatMode());
     }
 
     return new ModelAndView(
@@ -159,7 +157,7 @@ public class AddCommentController {
     commentService.checkPostData(add, user, ipBlockInfo, request, errors);
     commentService.prepareReplyto(add, formParams, request);
 
-    String msg = commentService.getCommentBody(add, user, errors);
+    MarkupText msg = commentService.getCommentBody(add, user, errors);
     Comment comment = commentService.getComment(add, user, request);
 
     if (add.getTopic() != null) {
@@ -167,12 +165,15 @@ public class AddCommentController {
       formParams.put("postscoreInfo", TopicPermissionService.getPostScoreInfo(postscore));
 
       topicPermissionService.checkCommentsAllowed(add.getTopic(), user, errors);
-      formParams.put("comment", commentPrepareService.prepareCommentForEdit(comment, msg, request.isSecure()));
+      formParams.put("comment",
+          commentPrepareService.prepareCommentForEdit(
+              comment, msg, request.isSecure()));
     }
 
     if (add.isPreviewMode() || errors.hasErrors() || comment == null) {
       ModelAndView modelAndView = new ModelAndView("add_comment", formParams);
       add.setMsg(StringUtil.escapeForceHtml(add.getMsg()));
+      add.setMarkup(add.getMarkup());
       return modelAndView;
     }
 

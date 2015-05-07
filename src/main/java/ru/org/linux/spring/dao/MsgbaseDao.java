@@ -21,7 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
@@ -31,6 +33,7 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @Repository
@@ -39,6 +42,8 @@ public class MsgbaseDao {
    * Запрос тела сообщения и признака bbcode для сообщения
    */
   private static final String QUERY_MESSAGE_TEXT = "SELECT message, markup FROM msgbase WHERE id=?";
+  private static final String QUERY_MESSAGE_LIST = "SELECT message, markup, id FROM msgbase WHERE id IN (:list)";
+
   private static final String QUERY_MESSAGE_TEXT_FROM_WIKI =
       "    select jam_topic_version.version_content " +
           "    from jam_topic, jam_topic_version " +
@@ -55,17 +60,27 @@ public class MsgbaseDao {
     jdbcTemplate = new JdbcTemplate(dataSource);
     namedJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
 
-    insertMsgbase = new SimpleJdbcInsert(dataSource);
-    insertMsgbase.setTableName("msgbase");
-    insertMsgbase.usingColumns("id", "message");
+    insertMsgbase = new SimpleJdbcInsert(dataSource)
+        .withTableName("msgbase")
+        .usingColumns("id", "message", "markup");
   }
 
   @Transactional(rollbackFor = Exception.class, propagation = Propagation.MANDATORY)
   public void saveNewMessage(String message, int msgid) {
-    insertMsgbase.execute(ImmutableMap.<String, Object>of(
-            "id", msgid,
-            "message", message)
-    );
+    SqlParameterSource parameters = new MapSqlParameterSource()
+        .addValue("id", msgid)
+        .addValue("message", message)
+        .addValue("markup", MarkupTextType.BBCODE_TEX.toString());
+    insertMsgbase.execute(parameters);
+  }
+
+  @Transactional(rollbackFor = Exception.class, propagation = Propagation.MANDATORY)
+  public void saveNewMarkupText(MarkupText message, int msgid) {
+    SqlParameterSource parameters = new MapSqlParameterSource()
+        .addValue("id", msgid)
+        .addValue("message", message.getText())
+        .addValue("markup", message.getType().toString());
+    insertMsgbase.execute(parameters);
   }
 
   public String getMessageTextFromWiki(int topicId) {
@@ -83,7 +98,7 @@ public class MsgbaseDao {
         return new MessageText(text, lorcode);
       }
     }, msgid);
-  }                  
+  }
 
   public Map<Integer, MessageText> getMessageText(Collection<Integer> msgids) {
     if (msgids.isEmpty()) {
@@ -92,8 +107,7 @@ public class MsgbaseDao {
 
     final Map<Integer, MessageText> out = Maps.newHashMapWithExpectedSize(msgids.size());
 
-    namedJdbcTemplate.query(
-            "SELECT message, markup, id FROM msgbase WHERE id IN (:list)",
+    namedJdbcTemplate.query(QUERY_MESSAGE_LIST,
             ImmutableMap.of("list", msgids),
             new RowCallbackHandler() {
               @Override
@@ -107,6 +121,37 @@ public class MsgbaseDao {
             });
 
     return out;
+  }
+
+  public MarkupText getMarkupText(int msgid) {
+    List<MarkupText> msgs = jdbcTemplate.query(QUERY_MESSAGE_TEXT, (ResultSet resultSet, int i) -> {
+      return new MarkupText(resultSet.getString("message"), MarkupTextType.valueOf(resultSet.getString("markup")));
+    }, msgid);
+    if(msgs.isEmpty()) {
+      return null;
+    } else {
+      return msgs.get(0);
+    }
+  }
+
+  public Map<Integer, MarkupText> getMarkupText(Collection<Integer> msgids) {
+    if (msgids.isEmpty()) {
+      return ImmutableMap.of();
+    }
+    final Map<Integer, MarkupText> out = Maps.newHashMapWithExpectedSize(msgids.size());
+    namedJdbcTemplate.query(QUERY_MESSAGE_LIST,
+        ImmutableMap.of("list", msgids), (resultSet) -> {
+          out.put(resultSet.getInt("id"), new MarkupText(resultSet.getString("message"), MarkupTextType.valueOf(resultSet.getString("markup"))));
+        });
+
+    return out;
+  }
+
+  public void updateMarkup(int msgid, MarkupText text) {
+    namedJdbcTemplate.update(
+        "UPDATE msgbase SET message=:message,markup=:markup WHERE id=:msgid",
+        ImmutableMap.of("message", text.getText(), "markup", text.getType(), "msgid", msgid)
+    );
   }
 
   public void updateMessage(int msgid, String text) {

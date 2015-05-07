@@ -20,7 +20,7 @@ import ru.org.linux.user.User;
 
 public class CommentRequest {
   private String preview;
-  private String mode;
+  private String markup;
   private String msg;
   private Comment replyto;
   private Comment original;
@@ -42,12 +42,12 @@ public class CommentRequest {
     return preview!=null;
   }
 
-  public String getMode() {
-    return mode;
+  public String getMarkup() {
+    return markup;
   }
 
-  public void setMode(String mode) {
-    this.mode = mode;
+  public void setMarkup(String markup) {
+    this.markup = markup;
   }
 
   public String getMsg() {

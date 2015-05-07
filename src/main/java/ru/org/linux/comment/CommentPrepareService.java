@@ -22,14 +22,14 @@ import org.springframework.stereotype.Service;
 import ru.org.linux.site.ApiDeleteInfo;
 import ru.org.linux.site.DeleteInfo;
 import ru.org.linux.site.Template;
-import ru.org.linux.spring.dao.DeleteInfoDao;
-import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
-import ru.org.linux.spring.dao.UserAgentDao;
+import ru.org.linux.spring.dao.*;
 import ru.org.linux.topic.Topic;
 import ru.org.linux.topic.TopicPermissionService;
 import ru.org.linux.user.*;
 import ru.org.linux.util.bbcode.LorCodeService;
+import ru.org.linux.util.formatter.ToLorCodeFormatter;
+import ru.org.linux.util.formatter.ToLorCodeTexFormatter;
+import ru.org.linux.util.markdown.MarkdownService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -44,6 +44,16 @@ public class CommentPrepareService {
 
   @Autowired
   private LorCodeService lorCodeService;
+
+  @Autowired
+  private MarkdownService markdownService;
+
+  @Autowired
+  private ToLorCodeFormatter toLorCodeFormatter;
+
+  @Autowired
+  private ToLorCodeTexFormatter toLorCodeTexFormatter;
+
 
   @Autowired
   private MsgbaseDao msgbaseDao;
@@ -67,14 +77,14 @@ public class CommentPrepareService {
           @Nonnull Comment comment,
           boolean secure
   ) throws UserNotFoundException {
-    MessageText messageText = msgbaseDao.getMessageText(comment.getId());
+    MarkupText markupText = msgbaseDao.getMarkupText(comment.getId());
     User author = userDao.getUserCached(comment.getUserid());
 
-    return prepareComment(messageText, author, null, comment, null, secure, null, null);
+    return prepareComment(markupText, author, null, comment, null, secure, null, null);
   }
 
   private PreparedComment prepareComment(
-          MessageText messageText,
+          MarkupText markupText,
           User author,
           @Nullable String remark,
           @Nonnull Comment comment,
@@ -83,7 +93,7 @@ public class CommentPrepareService {
           Template tmpl,
           Topic topic
   ) throws UserNotFoundException {
-    String processedMessage = prepareCommentText(messageText, secure, !topicPermissionService.followAuthorLinks(author));
+    String processedMessage = prepareCommentText(markupText, secure, !topicPermissionService.followAuthorLinks(author));
 
     ReplyInfo replyInfo = null;
     boolean deletable = false;
@@ -224,9 +234,10 @@ public class CommentPrepareService {
    * @return подготовленный коментарий
    * @throws UserNotFoundException
    */
-  public PreparedComment prepareCommentForEdit(Comment comment, String message, boolean secure) throws UserNotFoundException {
+  public PreparedComment prepareCommentForEdit(Comment comment, MarkupText message, boolean secure) throws
+      UserNotFoundException {
     User author = userDao.getUserCached(comment.getUserid());
-    String processedMessage = lorCodeService.parseComment(message, secure, false);
+    String processedMessage = prepareCommentText(message, secure, false);
 
     ApiUserRef ref = userService.ref(author, null);
 
@@ -279,7 +290,7 @@ public class CommentPrepareService {
       return ImmutableList.of();
     }
 
-    Map<Integer, MessageText> texts = msgbaseDao.getMessageText(Lists.transform(list, Comment::getId));
+    Map<Integer, MarkupText> texts = msgbaseDao.getMarkupText(Lists.transform(list, Comment::getId));
 
     Map<Integer, User> users = loadUsers(Iterables.transform(list, Comment::getUserid));
     User currentUser = tmpl.getCurrentUser();
@@ -294,7 +305,7 @@ public class CommentPrepareService {
 
     List<PreparedComment> commentsPrepared = new ArrayList<>(list.size());
     for (Comment comment : list) {
-      MessageText text = texts.get(comment.getId());
+      MarkupText text = texts.get(comment.getId());
 
       User author = users.get(comment.getUserid());
 
@@ -315,15 +326,22 @@ public class CommentPrepareService {
   /**
    * Получить html представление текста комментария
    *
-   * @param messageText текст комментария
+   * @param markupText текст комментария
    * @param secure https соединение?
    * @return строку html комментария
    */
-  private String prepareCommentText(MessageText messageText, final boolean secure, boolean nofollow) {
-    if (messageText.isLorcode()) {
-      return lorCodeService.parseComment(messageText.getText(), secure, nofollow);
-    } else {
-      return "<p>" + messageText.getText() + "</p>";
+  private String prepareCommentText(MarkupText markupText, final boolean secure, boolean nofollow) {
+    switch (markupText.getType()) {
+      case BBCODE_TEX:
+        return lorCodeService.parseComment(toLorCodeTexFormatter.format(markupText.getText()), secure, nofollow);
+      case BBCODE_ULB:
+        return lorCodeService.parseComment(toLorCodeFormatter.format(markupText.getText(), secure), secure, nofollow);
+      case PLAIN:
+        return "<p>" + markupText.getText() + "</p>";
+      case MARKDOWN:
+        return markdownService.parseComment(markupText.getText());
+      default:
+        throw new IllegalArgumentException("Invalid argument");
     }
   }
 

@@ -104,7 +104,7 @@
         title="<%= title %>"
         replyto="<%= replyto %>"
         msg="${add.msg}"
-        mode="${add.mode}"
+        markup="${add.markup}"
         form_action_url="${form_action_url}"
         postscoreInfo="${postscoreInfo}" />
 

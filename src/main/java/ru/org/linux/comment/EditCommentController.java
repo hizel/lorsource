@@ -33,6 +33,7 @@ import ru.org.linux.auth.IPBlockInfo;
 import ru.org.linux.csrf.CSRFNoAuto;
 import ru.org.linux.search.SearchQueueSender;
 import ru.org.linux.site.Template;
+import ru.org.linux.spring.dao.MarkupText;
 import ru.org.linux.spring.dao.MessageText;
 import ru.org.linux.spring.dao.MsgbaseDao;
 import ru.org.linux.topic.TopicPermissionService;
@@ -143,7 +144,7 @@ public class EditCommentController extends ApplicationObjectSupport {
     commentService.checkPostData(commentRequest, user, ipBlockInfo, request, errors);
     commentService.prepareReplyto(commentRequest, formParams, request);
 
-    String msg = commentService.getCommentBody(commentRequest, user, errors);
+    MarkupText msg = commentService.getCommentBody(commentRequest, user, errors);
     Comment comment = commentService.getComment(commentRequest, user, request);
 
     if (commentRequest.getTopic() != null) {
@@ -151,7 +152,8 @@ public class EditCommentController extends ApplicationObjectSupport {
 
       formParams.put("postscoreInfo", TopicPermissionService.getPostScoreInfo(postscore));
       topicPermissionService.checkCommentsAllowed(commentRequest.getTopic(), user, errors);
-      formParams.put("comment", commentPrepareService.prepareCommentForEdit(comment, msg, request.isSecure()));
+      formParams.put("comment", commentPrepareService.prepareCommentForEdit(
+          comment, msg, request.isSecure()));
     }
 
     Template tmpl = Template.getTemplate(request);

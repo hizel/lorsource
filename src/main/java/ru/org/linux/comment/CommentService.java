@@ -39,9 +39,7 @@ import ru.org.linux.edithistory.EditHistoryService;
 import ru.org.linux.site.MessageNotFoundException;
 import ru.org.linux.site.ScriptErrorException;
 import ru.org.linux.site.Template;
-import ru.org.linux.spring.dao.DeleteInfoDao;
-import ru.org.linux.spring.dao.MessageText;
-import ru.org.linux.spring.dao.MsgbaseDao;
+import ru.org.linux.spring.dao.*;
 import ru.org.linux.topic.Topic;
 import ru.org.linux.topic.TopicDao;
 import ru.org.linux.topic.TopicPermissionService;
@@ -168,8 +166,6 @@ public class CommentService {
    * @param ipBlockInfo     информация о банах
    * @param request         данные запроса от web-клиента
    * @param errors          обработчик ошибок ввода для формы
-   * @throws UnknownHostException
-   * @throws TextParseException
    */
   public void checkPostData(
     CommentRequest commentRequest,
@@ -185,8 +181,8 @@ public class CommentService {
 
     Template tmpl = Template.getTemplate(request);
 
-    if (commentRequest.getMode() == null) {
-      commentRequest.setMode(tmpl.getFormatMode());
+    if (commentRequest.getMarkup() == null) {
+      commentRequest.setMarkup(tmpl.getFormatMode());
     }
 
     if (!commentRequest.isPreviewMode() &&
@@ -215,12 +211,27 @@ public class CommentService {
    * @param errors          обработчик ошибок ввода для формы
    * @return текст комментария
    */
-  public String getCommentBody(
+  public MarkupText getCommentBody(
     CommentRequest commentRequest,
     User user,
     Errors errors
   ) {
-    String commentBody = processMessage(commentRequest.getMsg(), commentRequest.getMode());
+    MarkupTextType textType;
+    switch (commentRequest.getMarkup()) {
+      case "quot":
+        textType = MarkupTextType.BBCODE_TEX;
+        break;
+      case "ntobr":
+        textType = MarkupTextType.BBCODE_ULB;
+        break;
+      case "markdown":
+        textType = MarkupTextType.MARKDOWN;
+        break;
+      default:
+        textType = MarkupTextType.BBCODE_TEX;
+        errors.rejectValue("msg", "markup", "Неправильная разметка");
+    }
+    String commentBody = commentRequest.getMsg();
     if (user.isAnonymous()) {
       if (commentBody.length() > 4096) {
         errors.rejectValue("msg", null, "Слишком большое сообщение");
@@ -230,7 +241,7 @@ public class CommentService {
         errors.rejectValue("msg", null, "Слишком большое сообщение");
       }
     }
-    return commentBody;
+    return new MarkupText(commentBody, textType);
   }
 
   /**
@@ -322,7 +333,7 @@ public class CommentService {
    *
    *
    * @param comment        объект комментария
-   * @param commentBody    текст комментария
+   * @param msg            текст комментария
    * @param remoteAddress  IP-адрес, с которого был добавлен комментарий
    * @param xForwardedFor  IP-адрес через шлюз, с которого был добавлен комментарий
    * @param userAgent      заголовок User-Agent запроса
@@ -333,18 +344,18 @@ public class CommentService {
   public int create(
           @Nonnull User author,
           @Nonnull Comment comment,
-          String commentBody,
+          MarkupText msg,
           String remoteAddress,
           String xForwardedFor,
           String userAgent) throws MessageNotFoundException {
     Preconditions.checkArgument(comment.getUserid() == author.getId());
 
     int commentId = commentDao.saveNewMessage(comment, userAgent);
-    msgbaseDao.saveNewMessage(commentBody, commentId);
+    msgbaseDao.saveNewMarkupText(msg, commentId);
 
     /* кастование пользователей */
-    if (permissionService.isUserCastAllowed(author)) {
-      Set<User> userRefs = lorCodeService.getReplierFromMessage(commentBody);
+    if (msg.isBBCode() && permissionService.isUserCastAllowed(author)) {
+      Set<User> userRefs = lorCodeService.getReplierFromMessage(msg.getText());
       userEventService.addUserRefEvent(userRefs, comment.getTopicId(), commentId);
     }
 
@@ -388,30 +399,31 @@ public class CommentService {
   public void edit(
     Comment oldComment,
     Comment newComment,
-    String commentBody,
+    MarkupText commentBody,
     String remoteAddress,
     String xForwardedFor,
     @Nonnull User editor,
     String originalMessageText
   ) {
     commentDao.changeTitle(oldComment, newComment.getTitle());
-    msgbaseDao.updateMessage(oldComment.getId(), commentBody);
+    msgbaseDao.updateMarkup(oldComment.getId(), commentBody);
 
     /* кастование пользователей */
-    Set<User> newUserRefs = lorCodeService.getReplierFromMessage(commentBody);
+    if(commentBody.isBBCode()) {
+      Set<User> newUserRefs = lorCodeService.getReplierFromMessage(commentBody.getText());
 
-    MessageText messageText = msgbaseDao.getMessageText(oldComment.getId());
-    Set<User> oldUserRefs = lorCodeService.getReplierFromMessage(messageText.getText());
-    Set<User> userRefs = new HashSet<>();
-    /* кастовать только тех, кто добавился. Существующие ранее не кастуются */
-    for (User user : newUserRefs) {
-      if (!oldUserRefs.contains(user)) {
-        userRefs.add(user);
+      MessageText messageText = msgbaseDao.getMessageText(oldComment.getId());
+      Set<User> oldUserRefs = lorCodeService.getReplierFromMessage(messageText.getText());
+      Set<User> userRefs = new HashSet<>();
+      /* кастовать только тех, кто добавился. Существующие ранее не кастуются */
+      for (User user : newUserRefs) {
+        if (!oldUserRefs.contains(user)) {
+          userRefs.add(user);
+        }
       }
-    }
-
-    if (permissionService.isUserCastAllowed(editor)) {
-      userEventService.addUserRefEvent(userRefs, oldComment.getTopicId(), oldComment.getId());
+      if (permissionService.isUserCastAllowed(editor)) {
+        userEventService.addUserRefEvent(userRefs, oldComment.getTopicId(), oldComment.getId());
+      }
     }
 
     /* Обновление времени последнего изменения топика для того, чтобы данные в кеше автоматически обновились  */
@@ -453,9 +465,10 @@ public class CommentService {
    * @param original            оригинал (старый комментарий)
    * @param originalMessageText старое содержимое комментария
    * @param comment             изменённый комментарий
-   * @param messageText         новое содержимое комментария
+   * @param markupText         новое содержимое комментария
    */
-  private void addEditHistoryItem(User editor, Comment original, String originalMessageText, Comment comment, String messageText) {
+  private void addEditHistoryItem(User editor, Comment original, String originalMessageText, Comment comment, MarkupText
+      markupText) {
     EditHistoryDto editHistoryDto = new EditHistoryDto();
     editHistoryDto.setMsgid(original.getId());
     editHistoryDto.setObjectType(EditHistoryObjectTypeEnum.COMMENT);
@@ -467,10 +480,12 @@ public class CommentService {
       modified = true;
     }
 
-    if (!originalMessageText.equals(messageText)) {
+    if (!originalMessageText.equals(markupText.getText())) {
       editHistoryDto.setOldmessage(originalMessageText);
       modified = true;
     }
+
+    // TODO Add markup modify
 
     if (modified) {
       editHistoryService.insert(editHistoryDto);
@@ -777,21 +792,6 @@ public class CommentService {
     }
 
     return logMessage.toString();
-  }
-
-  /**
-   * Обработать тект комментария посредством парсеров (LorCode или Tex).
-   *
-   * @param msg   текст комментария
-   * @param mode  режим обработки
-   * @return обработанная строка
-   */
-  private String processMessage(String msg, String mode) {
-    if ("ntobr".equals(mode)) {
-      return toLorCodeFormatter.format(msg, true);
-    } else {
-      return toLorCodeTexFormatter.format(msg);
-    }
   }
 
   @Nonnull

@@ -24,7 +24,7 @@
 <%@ attribute name="replyto" required="false" type="java.lang.Integer" %>
 <%@ attribute name="original" required="false" type="java.lang.Integer" %>
 <%@ attribute name="msg" required="false" type="java.lang.String" %>
-<%@ attribute name="mode" required="true" type="java.lang.String" %>
+<%@ attribute name="markup" required="true" type="java.lang.String" %>
 <%@ attribute name="form_action_url" required="true" type="java.lang.String" %>
 <%@ attribute name="cancel" required="false" type="java.lang.Boolean" %>
 <%@ attribute name="ipBlockInfo" required="false" type="ru.org.linux.auth.IPBlockInfo" %>
@@ -52,14 +52,15 @@
   <c:if test="${original != null}">
     <input type="hidden" name="original" value="${original}">
   </c:if>
-  <c:if test="${template.prof.formatMode == 'ntobr'}">
-  <label for="mode">Разметка:*</label><br>
-  <select id="mode" name="mode">
-  <option value=quot <%= "quot".equals(mode)?"selected":""%> >TeX paragraphs w/quoting
-  <option value=ntobr <%= "ntobr".equals(mode)?"selected":""%> >User line breaks w/quoting
-  </select>  <br>
-  </c:if>
 
+  <div class="control-group">
+    <label for="markup">Разметка</label>
+    <select id="markup" name="markup">
+      <option value="quot" <c:if test="${markup == 'quot'}">selected</c:if> >BBCode</option>
+      <option value="ntobr" <c:if test="${markup == 'ntobr'}">selected</c:if> >BBCode broken</option>
+      <option value="markdown" <c:if test="${markup == 'markdown'}">selected</c:if> >Markdown</option>
+    </select>
+  </div>
   <div class="control-group">
     <label for="title">Заглавие</label>
     <input type=text id="title" name=title value="<%= StringUtil.escapeHtml(title) %>">
