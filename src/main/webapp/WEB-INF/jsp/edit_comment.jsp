@@ -55,7 +55,7 @@
         replyto="0"
         original="${edit.original.id}"
         msg="${edit.msg}"
-        mode="${edit.mode}"
+        markup="${edit.markup}"
         form_action_url="${form_action_url}"
         cancel="true"
         postscoreInfo="${postscoreInfo}" />
