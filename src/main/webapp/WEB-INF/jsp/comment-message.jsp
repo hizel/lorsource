@@ -45,7 +45,7 @@
 <lor:commentForm
         topic="${add.topic}"
         title=""
-        mode="${add.mode}"
+        markup="${add.markup}"
         ipBlockInfo="${ipBlockInfo}"
         form_action_url="${form_action_url}"
         postscoreInfo="${preparedMessage.postscoreInfo}" />
