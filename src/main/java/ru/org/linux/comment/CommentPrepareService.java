@@ -339,7 +339,7 @@ public class CommentPrepareService {
       case PLAIN:
         return "<p>" + markupText.getText() + "</p>";
       case MARKDOWN:
-        return markdownService.parseComment(markupText.getText());
+        return markdownService.parseComment(markupText.getText(), secure, nofollow);
       default:
         throw new IllegalArgumentException("Invalid argument");
     }

@@ -75,6 +75,37 @@ public class UserDao {
     jdbcTemplate = new JdbcTemplate(dataSource);
   }
 
+  public class FindUser {
+    private final boolean found;
+    private final User user;
+
+    public FindUser(boolean found, User user) {
+      this.found = found;
+      this.user = user;
+    }
+
+    public boolean isFound() {
+      return found;
+    }
+
+    public User getUser() {
+      return user;
+    }
+  }
+
+  public FindUser findUser(String nick) {
+    if(nick == null || !StringUtil.checkLoginName(nick)) {
+      return new FindUser(false, null);
+    }
+
+    List<Integer> list = jdbcTemplate.queryForList(queryUserIdByNick, Integer.class, nick);
+    if(list.isEmpty() || list.size() > 1) {
+      return new FindUser(false, null);
+    } else {
+      return new FindUser(true, getUserCached(list.get(0)));
+    }
+  }
+
   public int findUserId(String nick) throws UserNotFoundException {
     if (nick == null) {
       throw new NullPointerException();

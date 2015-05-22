@@ -126,7 +126,7 @@ public class ToHtmlFormatter {
     return text2;
   }
 
-  public String memberURL(User user, boolean secure) throws URIException {
+  public String memberURL(User user, boolean secure) {
     URI mainUri = siteConfig.getMainURI();
     String scheme;
     if(secure) {
@@ -134,7 +134,11 @@ public class ToHtmlFormatter {
     } else {
       scheme = "http";
     }
-    return (new URI(scheme, null, mainUri.getHost(), mainUri.getPort(), String.format("/people/%s/profile", user.getNick()))).getEscapedURIReference();
+    try {
+      return (new URI(scheme, null, mainUri.getHost(), mainUri.getPort(), String.format("/people/%s/profile", user.getNick()))).getEscapedURIReference();
+    } catch (Exception ex) {
+      return "<url error>";
+    }
   }
 
   protected String formatURL(String line, boolean secure, boolean nofollow, RuTypoChanger changer) {
